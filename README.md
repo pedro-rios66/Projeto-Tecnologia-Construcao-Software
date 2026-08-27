@@ -1,4 +1,4 @@
-# GymLog
+# GymLog 🦾📈
 
 ## Descrição
 
