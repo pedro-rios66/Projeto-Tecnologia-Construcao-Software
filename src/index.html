@@ -7,9 +7,83 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <!-- Biblioteca de ícones SVG inline. Cada <symbol> é referenciado via <use href="#id">. -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-haltere" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6.5 7.5v9M17.5 7.5v9M3.5 10v4M20.5 10v4M6.5 12h11"/>
+    </symbol>
+    <symbol id="icon-mais" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <path d="M12 5v14M5 12h14"/>
+    </symbol>
+    <symbol id="icon-voltar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </symbol>
+    <symbol id="icon-vazio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2"/>
+      <path d="M3 10h18M7.5 14.5h6"/>
+    </symbol>
+  </svg>
+
+  <!-- Modelos de marcação clonados pelo app.js (cloneNode). A estrutura HTML dos
+       elementos repetidos fica aqui, não dentro do JavaScript. -->
+  <template id="tpl-cartao-treino">
+    <article class="cartao" data-id-treino>
+      <h3 class="cartao__titulo"></h3>
+      <p class="cartao__meta cartao__descricao"></p>
+      <ul class="cartao__resumo">
+        <li><strong data-resumo="exercicios"></strong> exercícios</li>
+        <li><strong data-resumo="series"></strong> séries</li>
+        <li><strong data-resumo="repeticoes"></strong> repetições</li>
+      </ul>
+      <div class="cartao__rodape">
+        <button class="btn btn--secundario" type="button" data-acao="abrir-treino">Abrir treino</button>
+      </div>
+    </article>
+  </template>
+
+  <template id="tpl-cartao-exercicio">
+    <article class="cartao" data-id-exercicio>
+      <h3 class="cartao__titulo"></h3>
+      <p class="cartao__meta"><span data-resumo="series"></span> &middot; <strong data-resumo="repeticoes"></strong> repetições</p>
+      <div class="cartao__rodape">
+        <button class="btn btn--secundario" type="button" data-acao="abrir-exercicio">Abrir</button>
+      </div>
+    </article>
+  </template>
+
+  <template id="tpl-linha-serie">
+    <tr data-id-serie>
+      <td class="tabela-series__celula-check"><input type="checkbox" class="tabela-series__checkbox"></td>
+      <td data-celula="numero"></td>
+      <td data-celula="peso" class="tabela-series__valor"></td>
+      <td data-celula="reps" class="tabela-series__valor"></td>
+    </tr>
+  </template>
+
+  <template id="tpl-estado-vazio">
+    <div class="estado-vazio">
+      <svg class="estado-vazio__icone" aria-hidden="true"><use href="#icon-vazio"></use></svg>
+      <p class="estado-vazio__texto"></p>
+    </div>
+  </template>
+
+  <template id="tpl-linha-vazia">
+    <tr>
+      <td colspan="4">
+        <div class="estado-vazio estado-vazio--compacto">
+          <svg class="estado-vazio__icone" aria-hidden="true"><use href="#icon-vazio"></use></svg>
+          <p class="estado-vazio__texto">Nenhuma série registrada ainda.</p>
+        </div>
+      </td>
+    </tr>
+  </template>
+
   <header class="cabecalho-app">
     <div class="cabecalho-app__interno">
-      <h1 class="cabecalho-app__titulo">GymLog</h1>
+      <h1 class="cabecalho-app__titulo">
+        <svg class="cabecalho-app__icone" aria-hidden="true"><use href="#icon-haltere"></use></svg>
+        GymLog
+      </h1>
       <p class="cabecalho-app__subtitulo">Seu diário de treinos</p>
     </div>
   </header>
@@ -20,7 +94,9 @@
     <section id="tela-treinos" class="tela" hidden>
       <div class="cabecalho-view">
         <h2>Meus Treinos</h2>
-        <button id="btn-novo-treino" class="btn btn--primario" type="button">+ Novo Treino</button>
+        <button id="btn-novo-treino" class="btn btn--primario" type="button">
+          <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Novo Treino
+        </button>
       </div>
       <div id="lista-treinos" class="grade-cartoes"></div>
     </section>
@@ -47,16 +123,36 @@
     </section>
 
     <section id="tela-treino" class="tela" hidden>
-      <button id="btn-voltar-treinos" class="btn-link" type="button">&larr; Voltar</button>
+      <button id="btn-voltar-treinos" class="btn-link" type="button">
+        <svg class="btn-link__icone" aria-hidden="true"><use href="#icon-voltar"></use></svg> Voltar
+      </button>
       <div class="cabecalho-view">
         <div>
           <h2 id="titulo-treino"></h2>
           <p id="descricao-treino" class="discreto"></p>
         </div>
       </div>
+
+      <div id="resumo-treino" class="painel-metricas" hidden>
+        <div class="painel-metricas__item">
+          <span class="painel-metricas__valor" id="metrica-exercicios"></span>
+          <span class="painel-metricas__rotulo">exercícios</span>
+        </div>
+        <div class="painel-metricas__item">
+          <span class="painel-metricas__valor" id="metrica-series"></span>
+          <span class="painel-metricas__rotulo">séries</span>
+        </div>
+        <div class="painel-metricas__item">
+          <span class="painel-metricas__valor" id="metrica-repeticoes"></span>
+          <span class="painel-metricas__rotulo">repetições</span>
+        </div>
+      </div>
+
       <h3 class="subtitulo-secao">Exercícios</h3>
       <div id="lista-exercicios" class="grade-cartoes"></div>
-      <button id="btn-novo-exercicio" class="btn btn--primario" type="button">+ Adicionar exercício</button>
+      <button id="btn-novo-exercicio" class="btn btn--primario" type="button">
+        <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Adicionar exercício
+      </button>
 
       <div id="wrapper-form-novo-exercicio" class="wrapper-formulario" hidden>
         <form id="form-novo-exercicio" class="formulario" novalidate>
@@ -74,12 +170,26 @@
     </section>
 
     <section id="tela-exercicio" class="tela" hidden>
-      <button id="btn-voltar-treino" class="btn-link" type="button">&larr; Voltar</button>
+      <button id="btn-voltar-treino" class="btn-link" type="button">
+        <svg class="btn-link__icone" aria-hidden="true"><use href="#icon-voltar"></use></svg> Voltar
+      </button>
       <div class="cabecalho-view">
         <h2 id="titulo-exercicio"></h2>
       </div>
       <h3 class="subtitulo-secao">Séries</h3>
-      <p id="progresso-series" class="progresso-series"></p>
+
+      <div id="destaque-melhor-serie" class="destaque" hidden>
+        <svg class="destaque__icone" aria-hidden="true"><use href="#icon-haltere"></use></svg>
+        <div>
+          <p class="destaque__rotulo">Melhor série</p>
+          <p class="destaque__valor"><strong id="melhor-serie-peso"></strong> kg &times; <strong id="melhor-serie-reps"></strong></p>
+        </div>
+      </div>
+
+      <div id="progresso-series" class="progresso-series" hidden>
+        <div class="progresso-series__barra"><span class="progresso-series__preenchido"></span></div>
+        <p class="progresso-series__texto"></p>
+      </div>
       <table class="tabela-series">
         <thead>
           <tr>
@@ -91,7 +201,9 @@
         </thead>
         <tbody id="corpo-tabela-series"></tbody>
       </table>
-      <button id="btn-nova-serie" class="btn btn--primario" type="button">+ Adicionar série</button>
+      <button id="btn-nova-serie" class="btn btn--primario" type="button">
+        <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Adicionar série
+      </button>
 
       <div id="wrapper-form-nova-serie" class="wrapper-formulario" hidden>
         <form id="form-nova-serie" class="formulario" novalidate>

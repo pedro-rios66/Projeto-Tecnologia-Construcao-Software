@@ -68,6 +68,15 @@ Visualização de:
 - pesos utilizados;
 - repetições realizadas.
 
+### Métricas
+
+Calculadas a partir dos registros existentes, sem novos campos no modelo de dados:
+
+- resumo no cartão de cada treino: total de exercícios, total de séries e total de repetições;
+- total de repetições por exercício, no cartão do exercício e no painel da tela do treino;
+- barra de progresso das séries feitas na tela do exercício;
+- destaque da "melhor série" (maior peso registrado) na tela do exercício.
+
 ### Evolução
 
 Em etapa posterior, a aplicação poderá apresentar a evolução de um determinado exercício ao longo do tempo, a partir dos registros já armazenados.
@@ -85,6 +94,8 @@ Versão atual do projeto:
 | HTML5 | estrutura da interface |
 | CSS3 | estilização e layout |
 | JavaScript (ES6+) | lógica da aplicação e interações |
+| `<template>` HTML | marcação dos elementos repetidos, clonada pelo JS (sem HTML em strings) |
+| SVG inline | ícones (`<symbol>` + `<use>`), sem imagens externas nem biblioteca |
 | LocalStorage | persistência dos dados no navegador |
 | Git / GitHub | versionamento e hospedagem do repositório |
 

@@ -43,3 +43,93 @@ Re-renderização completa da seção afetada a cada mudança de estado (ex.: `r
 ## Persistência
 
 Nenhuma persistência nesta etapa (dados apenas em memória), por decisão explícita de escopo — será tratada em etapa futura.
+
+---
+
+# Decisões técnicas — Etapa de refinamento de interface
+
+Esta etapa não altera o modelo de dados nem o fluxo de navegação. Ela melhora a
+camada de apresentação, mantendo a restrição de HTML, CSS e JavaScript puro (sem
+módulos ES, sem build, aberto via `file://`).
+
+## Marcação em `<template>` em vez de HTML dentro do JavaScript
+
+Os cartões de treino e exercício e a linha da tabela de séries eram montados no
+`app.js` com concatenação de strings em `innerHTML`. A marcação foi movida para
+elementos `<template>` no `index.html` (`tpl-cartao-treino`, `tpl-cartao-exercicio`,
+`tpl-linha-serie`, `tpl-estado-vazio`, `tpl-linha-vazia`). O `app.js` clona o
+conteúdo com `template.content.firstElementChild.cloneNode(true)` e preenche
+apenas texto e atributos dinâmicos via `querySelector`.
+
+**Motivação:** manter a estrutura HTML em arquivos HTML facilita a leitura, evita
+erros de escape e torna a auditoria mais direta. Alternativa considerada:
+`document.createElement` para cada nó — mais verboso e ainda espalha marcação pelo
+JavaScript.
+
+## Delegação de eventos
+
+Antes, cada cartão renderizado recebia seu próprio `addEventListener`, recriado a
+cada re-renderização. Agora há um único listener no container pai
+(`#lista-treinos`, `#lista-exercicios`, `#corpo-tabela-series`) que identifica o
+elemento clicado por `event.target.closest(...)` lendo um `data-*`
+(`data-id-treino`, `data-id-exercicio`, `data-id-serie`, `data-acao`).
+
+**Motivação:** menos listeners criados e removidos, um único ponto de tratamento
+por lista, e o listener sobrevive à reconstrução do conteúdo.
+
+## Métricas (funções puras)
+
+Adicionadas `calcularRepeticoesExercicio`, `calcularRepeticoesTreino`,
+`contarSeriesTreino` e `encontrarMelhorSerie`, todas puras: recebem um objeto do
+estado e devolvem um número (ou a série de maior peso). O total de repetições é a
+soma de `repeticoes` de todas as séries. Nenhum campo novo foi adicionado ao
+modelo de dados — as métricas são derivadas do estado existente a cada
+renderização, coerente com a estratégia de re-renderização completa já adotada.
+
+Exibição: resumo no cartão de cada treino (exercícios / séries / repetições),
+total de repetições no cartão de cada exercício, painel de métricas na tela do
+treino e bloco de destaque da "melhor série" (maior peso) na tela do exercício.
+No CSS, os valores numéricos recebem mais peso (fonte maior/mais pesada) e
+`font-variant-numeric: tabular-nums` alinha os dígitos em coluna.
+
+> O volume de carga (peso × repetições) foi considerado e descartado por ora:
+> não é a métrica mais relevante nesta fase. O total de repetições é mais direto
+> de ler e não depende de todas as séries terem peso preenchido.
+
+## Ícones SVG inline
+
+Um `<svg class="svg-sprite">` no início do `index.html` define `<symbol>`
+reutilizáveis (`icon-haltere`, `icon-mais`, `icon-voltar`, `icon-vazio`),
+referenciados por `<svg><use href="#id"></use></svg>` nos botões e nos estados
+vazios. Sem arquivos de imagem externos e sem biblioteca de ícones, mantendo a
+aplicação autocontida e funcional via `file://`.
+
+## Estados vazios desenhados
+
+Os textos soltos ("Nenhum treino cadastrado", etc.) foram substituídos por um
+bloco centralizado (`tpl-estado-vazio`) com ícone, texto e, quando faz sentido,
+o botão de ação já dentro do próprio estado vazio.
+
+## Como o sprite SVG é escondido
+
+O `<svg class="svg-sprite">` precisa continuar no DOM para que os `<use>` o
+encontrem, mas não deve aparecer. Usar `display: none` quebra as referências
+`<use>` em alguns navegadores (Chrome/Safari). A solução adotada é tirá-lo do
+fluxo visual sem removê-lo da renderização:
+`position: absolute; width: 0; height: 0; overflow: hidden`.
+
+## Identidade visual
+
+Tema escuro com um acento em gradiente (laranja → âmbar) aplicado de forma
+consistente: botões primários, faixa superior dos cartões no hover, números das
+métricas (preenchimento de texto em gradiente), barra de progresso e realce da
+melhor série (maior peso). Efeitos de elevação (`transform` + `box-shadow`) no hover dos
+cartões, animação de entrada nas telas e `@media (prefers-reduced-motion)` para
+desligar o movimento. Tudo em CSS puro, sem imagens nem fontes externas.
+
+## Barra de progresso das séries
+
+`renderizarProgressoSeries` passou a preencher uma barra
+(`.progresso-series__preenchido`) definindo `style.width` com o percentual de
+séries feitas, além do texto. É a única métrica escrita diretamente como estilo
+inline, por ser um valor calculado que não caberia numa classe fixa.

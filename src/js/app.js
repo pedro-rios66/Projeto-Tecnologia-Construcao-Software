@@ -7,9 +7,10 @@
    2. Dados de exemplo (seed)
    3. Funções de criação (treino / exercício / série)
    4. Funções de validação
-   5. Funções de renderização (DOM)
-   6. Navegação entre telas
-   7. Manipulação de eventos
+   5. Métricas (funções puras de cálculo)
+   6. Funções de renderização (DOM)
+   7. Navegação entre telas
+   8. Manipulação de eventos
    ========================================================== */
 
 /* ----------------------------------------------------------
@@ -46,7 +47,7 @@ function criarDadosDeExemplo() {
   adicionarExercicio(treinoA.id, "Tríceps Pulley");
 
   const treinoB = criarTreino("Treino B", "Costas + Bíceps");
-  const puxada = adicionarExercicio(treinoB.id, "Puxada Frontal");
+  const puxada = adicionarExercicio(treinoB.id, "Puxada Alta");
   adicionarSerie(puxada.id, 45, 12);
   adicionarSerie(puxada.id, 45, 12);
 
@@ -158,38 +159,86 @@ function validarSerie(pesoStr, repeticoesStr) {
 }
 
 /* ----------------------------------------------------------
-   5. Renderização
+   5. Métricas (funções puras: recebem estado, devolvem número)
    ---------------------------------------------------------- */
+
+// Total de repetições = soma das repetições de todas as séries.
+function calcularRepeticoesExercicio(exercicio) {
+  return exercicio.series.reduce(function (total, serie) {
+    return total + serie.repeticoes;
+  }, 0);
+}
+
+function calcularRepeticoesTreino(treino) {
+  return treino.exercicios.reduce(function (total, exercicio) {
+    return total + calcularRepeticoesExercicio(exercicio);
+  }, 0);
+}
+
+function contarSeriesTreino(treino) {
+  return treino.exercicios.reduce(function (total, exercicio) {
+    return total + exercicio.series.length;
+  }, 0);
+}
+
+// Melhor série = a de maior peso registrado (a primeira, em caso de empate).
+function encontrarMelhorSerie(exercicio) {
+  return exercicio.series.reduce(function (melhor, serie) {
+    return (melhor === null || serie.peso > melhor.peso) ? serie : melhor;
+  }, null);
+}
+
+// Mostra inteiros sem casas decimais e valores fracionários com uma casa.
+function formatarNumero(valor) {
+  return Number.isInteger(valor) ? String(valor) : valor.toFixed(1);
+}
+
+/* ----------------------------------------------------------
+   6. Renderização
+   ---------------------------------------------------------- */
+
+// Clona o conteúdo de um <template> do index.html.
+function clonarTemplate(idTemplate) {
+  return document.getElementById(idTemplate).content.firstElementChild.cloneNode(true);
+}
+
+// Bloco reutilizável de "estado vazio": ícone + texto + botão de ação opcional.
+function criarEstadoVazio(texto, acao) {
+  const bloco = clonarTemplate("tpl-estado-vazio");
+  bloco.querySelector(".estado-vazio__texto").textContent = texto;
+
+  if (acao) {
+    const botao = document.createElement("button");
+    botao.className = "btn btn--primario";
+    botao.type = "button";
+    botao.dataset.acao = acao.acao;
+    botao.textContent = acao.rotulo;
+    bloco.appendChild(botao);
+  }
+
+  return bloco;
+}
 
 function renderizarTreinos() {
   const lista = document.getElementById("lista-treinos");
   lista.innerHTML = "";
 
   if (estado.treinos.length === 0) {
-    lista.innerHTML = '<p class="cartao__vazio">Nenhum treino cadastrado ainda.</p>';
+    lista.appendChild(criarEstadoVazio("Nenhum treino cadastrado ainda.", {
+      rotulo: "+ Novo Treino",
+      acao: "novo-treino"
+    }));
     return;
   }
 
   estado.treinos.forEach(function (treino) {
-    const cartao = document.createElement("article");
-    cartao.className = "cartao";
-    cartao.innerHTML =
-      '<h3 class="cartao__titulo"></h3>' +
-      '<p class="cartao__meta cartao__descricao"></p>' +
-      '<p class="cartao__meta"></p>' +
-      '<div class="cartao__rodape">' +
-      '<button class="btn btn--secundario" type="button">Abrir treino</button>' +
-      "</div>";
-
+    const cartao = clonarTemplate("tpl-cartao-treino");
+    cartao.dataset.idTreino = treino.id;
     cartao.querySelector(".cartao__titulo").textContent = treino.nome;
     cartao.querySelector(".cartao__descricao").textContent = treino.descricao || "Sem descrição";
-    cartao.querySelectorAll(".cartao__meta")[1].textContent =
-      treino.exercicios.length + (treino.exercicios.length === 1 ? " exercício" : " exercícios");
-
-    cartao.querySelector("button").addEventListener("click", function () {
-      abrirTreino(treino.id);
-    });
-
+    cartao.querySelector('[data-resumo="exercicios"]').textContent = treino.exercicios.length;
+    cartao.querySelector('[data-resumo="series"]').textContent = contarSeriesTreino(treino);
+    cartao.querySelector('[data-resumo="repeticoes"]').textContent = calcularRepeticoesTreino(treino);
     lista.appendChild(cartao);
   });
 }
@@ -201,30 +250,28 @@ function renderizarTreino() {
   document.getElementById("titulo-treino").textContent = treino.nome;
   document.getElementById("descricao-treino").textContent = treino.descricao || "Sem descrição";
 
+  document.getElementById("metrica-exercicios").textContent = treino.exercicios.length;
+  document.getElementById("metrica-series").textContent = contarSeriesTreino(treino);
+  document.getElementById("metrica-repeticoes").textContent = calcularRepeticoesTreino(treino);
+  document.getElementById("resumo-treino").hidden = treino.exercicios.length === 0;
+
   const lista = document.getElementById("lista-exercicios");
   lista.innerHTML = "";
 
   if (treino.exercicios.length === 0) {
-    lista.innerHTML = '<p class="cartao__vazio">Nenhum exercício adicionado ainda.</p>';
+    lista.appendChild(criarEstadoVazio("Nenhum exercício adicionado ainda.", {
+      rotulo: "+ Adicionar exercício",
+      acao: "novo-exercicio"
+    }));
   } else {
     treino.exercicios.forEach(function (exercicio) {
-      const cartao = document.createElement("article");
-      cartao.className = "cartao";
-      cartao.innerHTML =
-        '<h3 class="cartao__titulo"></h3>' +
-        '<p class="cartao__meta"></p>' +
-        '<div class="cartao__rodape">' +
-        '<button class="btn btn--secundario" type="button">Abrir</button>' +
-        "</div>";
-
+      const cartao = clonarTemplate("tpl-cartao-exercicio");
+      cartao.dataset.idExercicio = exercicio.id;
       cartao.querySelector(".cartao__titulo").textContent = exercicio.nome;
-      cartao.querySelector(".cartao__meta").textContent =
+      cartao.querySelector('[data-resumo="series"]').textContent =
         exercicio.series.length + (exercicio.series.length === 1 ? " série" : " séries");
-
-      cartao.querySelector("button").addEventListener("click", function () {
-        abrirExercicio(exercicio.id);
-      });
-
+      cartao.querySelector('[data-resumo="repeticoes"]').textContent =
+        calcularRepeticoesExercicio(exercicio);
       lista.appendChild(cartao);
     });
   }
@@ -243,52 +290,66 @@ function renderizarExercicio() {
   corpoTabela.innerHTML = "";
 
   if (exercicio.series.length === 0) {
-    const linha = document.createElement("tr");
-    linha.innerHTML = '<td colspan="4" class="cartao__vazio">Nenhuma série registrada ainda.</td>';
-    corpoTabela.appendChild(linha);
+    corpoTabela.appendChild(clonarTemplate("tpl-linha-vazia"));
   } else {
     exercicio.series.forEach(function (serie) {
-      const linha = document.createElement("tr");
-      linha.className = serie.feita ? "tabela-series__linha--feita" : "";
-      linha.innerHTML =
-        '<td class="tabela-series__celula-check"><input type="checkbox" class="tabela-series__checkbox"></td>' +
-        "<td></td><td></td><td></td>";
+      const linha = clonarTemplate("tpl-linha-serie");
+      linha.dataset.idSerie = serie.id;
+      if (serie.feita) linha.classList.add("tabela-series__linha--feita");
+
       const checkbox = linha.querySelector("input");
       checkbox.checked = serie.feita;
       checkbox.setAttribute("aria-label", "Marcar série " + serie.numero + " como feita");
-      checkbox.addEventListener("change", function () {
-        alternarSerieFeita(serie.id);
-        renderizarExercicio();
-      });
-      linha.children[1].textContent = serie.numero;
-      linha.children[2].textContent = serie.peso + " kg";
-      linha.children[3].textContent = serie.repeticoes;
+
+      linha.querySelector('[data-celula="numero"]').textContent = serie.numero;
+      linha.querySelector('[data-celula="peso"]').textContent = formatarNumero(serie.peso) + " kg";
+      linha.querySelector('[data-celula="reps"]').textContent = serie.repeticoes;
       corpoTabela.appendChild(linha);
     });
   }
 
+  renderizarMelhorSerie(exercicio);
   renderizarProgressoSeries(exercicio);
   esconderFormularioNovaSerie();
 }
 
+function renderizarMelhorSerie(exercicio) {
+  const bloco = document.getElementById("destaque-melhor-serie");
+  const melhor = encontrarMelhorSerie(exercicio);
+
+  if (!melhor) {
+    bloco.hidden = true;
+    return;
+  }
+
+  document.getElementById("melhor-serie-peso").textContent = formatarNumero(melhor.peso);
+  document.getElementById("melhor-serie-reps").textContent =
+    melhor.repeticoes + (melhor.repeticoes === 1 ? " rep" : " reps");
+  bloco.hidden = false;
+}
+
 function renderizarProgressoSeries(exercicio) {
-  const elementoProgresso = document.getElementById("progresso-series");
+  const container = document.getElementById("progresso-series");
   const total = exercicio.series.length;
   const feitas = exercicio.series.filter(function (s) { return s.feita; }).length;
 
   if (total === 0) {
-    elementoProgresso.textContent = "";
+    container.hidden = true;
     return;
   }
 
   const faltam = total - feitas;
-  elementoProgresso.textContent =
+  const percentual = Math.round((feitas / total) * 100);
+
+  container.hidden = false;
+  container.querySelector(".progresso-series__preenchido").style.width = percentual + "%";
+  container.querySelector(".progresso-series__texto").textContent =
     feitas + " de " + total + " séries feitas" +
     (faltam > 0 ? " (faltam " + faltam + ")" : " — concluído!");
 }
 
 /* ----------------------------------------------------------
-   6. Navegação entre telas
+   7. Navegação entre telas
    ---------------------------------------------------------- */
 
 function mostrarTela(nomeTela) {
@@ -323,7 +384,7 @@ function abrirExercicio(idExercicio) {
 }
 
 /* ----------------------------------------------------------
-   7. Manipulação de eventos
+   8. Manipulação de eventos
    ---------------------------------------------------------- */
 
 function mostrarErroFormulario(idElemento, mensagem) {
@@ -338,10 +399,20 @@ function limparErroFormulario(idElemento) {
   elementoErro.textContent = "";
 }
 
+function abrirFormularioNovoExercicio() {
+  document.getElementById("wrapper-form-novo-exercicio").hidden = false;
+  document.getElementById("input-nome-exercicio").focus();
+}
+
 function esconderFormularioNovoExercicio() {
   document.getElementById("wrapper-form-novo-exercicio").hidden = true;
   document.getElementById("form-novo-exercicio").reset();
   limparErroFormulario("erro-novo-exercicio");
+}
+
+function abrirFormularioNovaSerie() {
+  document.getElementById("wrapper-form-nova-serie").hidden = false;
+  document.getElementById("input-peso-serie").focus();
 }
 
 function esconderFormularioNovaSerie() {
@@ -351,8 +422,17 @@ function esconderFormularioNovaSerie() {
 }
 
 function configurarEventos() {
-  // --- Lista de treinos ---
+  // --- Lista de treinos (delegação: um listener para todos os cartões) ---
   document.getElementById("btn-novo-treino").addEventListener("click", irParaFormularioNovoTreino);
+
+  document.getElementById("lista-treinos").addEventListener("click", function (event) {
+    if (event.target.closest('[data-acao="novo-treino"]')) {
+      irParaFormularioNovoTreino();
+      return;
+    }
+    const cartao = event.target.closest("[data-id-treino]");
+    if (cartao) abrirTreino(Number(cartao.dataset.idTreino));
+  });
 
   // --- Formulário: novo treino ---
   document.getElementById("btn-cancelar-novo-treino").addEventListener("click", irParaTreinos);
@@ -376,9 +456,15 @@ function configurarEventos() {
   // --- Tela de treino ---
   document.getElementById("btn-voltar-treinos").addEventListener("click", irParaTreinos);
 
-  document.getElementById("btn-novo-exercicio").addEventListener("click", function () {
-    document.getElementById("wrapper-form-novo-exercicio").hidden = false;
-    document.getElementById("input-nome-exercicio").focus();
+  document.getElementById("btn-novo-exercicio").addEventListener("click", abrirFormularioNovoExercicio);
+
+  document.getElementById("lista-exercicios").addEventListener("click", function (event) {
+    if (event.target.closest('[data-acao="novo-exercicio"]')) {
+      abrirFormularioNovoExercicio();
+      return;
+    }
+    const cartao = event.target.closest("[data-id-exercicio]");
+    if (cartao) abrirExercicio(Number(cartao.dataset.idExercicio));
   });
 
   document.getElementById("btn-cancelar-novo-exercicio").addEventListener("click", esconderFormularioNovoExercicio);
@@ -402,12 +488,17 @@ function configurarEventos() {
     abrirTreino(estado.idTreinoAtual);
   });
 
-  document.getElementById("btn-nova-serie").addEventListener("click", function () {
-    document.getElementById("wrapper-form-nova-serie").hidden = false;
-    document.getElementById("input-peso-serie").focus();
-  });
+  document.getElementById("btn-nova-serie").addEventListener("click", abrirFormularioNovaSerie);
 
   document.getElementById("btn-cancelar-nova-serie").addEventListener("click", esconderFormularioNovaSerie);
+
+  // Delegação: um listener na tabela cobre o checkbox de qualquer série.
+  document.getElementById("corpo-tabela-series").addEventListener("change", function (event) {
+    const linha = event.target.closest("[data-id-serie]");
+    if (!linha) return;
+    alternarSerieFeita(Number(linha.dataset.idSerie));
+    renderizarExercicio();
+  });
 
   document.getElementById("form-nova-serie").addEventListener("submit", function (event) {
     event.preventDefault();
