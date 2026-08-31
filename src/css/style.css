@@ -1,0 +1,333 @@
+/* ==========================================================
+   GymLog — Estilos
+   Organização: variáveis > reset básico > layout > componentes
+   ========================================================== */
+
+:root {
+  --cor-fundo: #0f1115;
+  --cor-superficie: #1a1d24;
+  --cor-superficie-alt: #21252e;
+  --cor-borda: #2c313c;
+  --cor-texto: #eef0f4;
+  --cor-texto-discreto: #9aa1af;
+  --cor-primaria: #ff5a3c;
+  --cor-primaria-hover: #ff7a5f;
+  --cor-perigo: #ff6b6b;
+  --cor-perigo-fundo: #3a1f1f;
+
+  --raio-pequeno: 6px;
+  --raio-medio: 10px;
+  --raio-grande: 14px;
+
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 16px;
+  --espaco-4: 24px;
+  --espaco-5: 32px;
+
+  --largura-maxima: 960px;
+  --fonte-principal: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte-principal);
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  margin: 0;
+}
+
+/* ---------- Cabeçalho / Rodapé ---------- */
+
+.cabecalho-app {
+  background: linear-gradient(135deg, #1a1d24, #14171d);
+  border-bottom: 1px solid var(--cor-borda);
+  padding: var(--espaco-4) var(--espaco-3);
+}
+
+.cabecalho-app__interno {
+  max-width: var(--largura-maxima);
+  margin: 0 auto;
+}
+
+.cabecalho-app__titulo {
+  font-size: 2rem;
+  letter-spacing: 0.5px;
+  color: var(--cor-primaria);
+}
+
+.cabecalho-app__subtitulo {
+  margin: var(--espaco-1) 0 0;
+  color: var(--cor-texto-discreto);
+}
+
+.rodape-app {
+  max-width: var(--largura-maxima);
+  margin: var(--espaco-5) auto var(--espaco-4);
+  padding: var(--espaco-3);
+  text-align: center;
+  color: var(--cor-texto-discreto);
+  font-size: 0.85rem;
+}
+
+/* ---------- Layout principal ---------- */
+
+.principal-app {
+  max-width: var(--largura-maxima);
+  margin: 0 auto;
+  padding: var(--espaco-4) var(--espaco-3);
+}
+
+.cabecalho-view {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-4);
+  flex-wrap: wrap;
+}
+
+.subtitulo-secao {
+  margin: var(--espaco-4) 0 var(--espaco-3);
+  font-size: 1.1rem;
+  color: var(--cor-texto-discreto);
+}
+
+.discreto {
+  color: var(--cor-texto-discreto);
+  margin: var(--espaco-1) 0 0;
+}
+
+/* ---------- Cartões ---------- */
+
+.grade-cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--espaco-3);
+}
+
+.cartao {
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  padding: var(--espaco-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.cartao__titulo {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.cartao__meta {
+  color: var(--cor-texto-discreto);
+  font-size: 0.9rem;
+}
+
+.cartao__rodape {
+  margin-top: var(--espaco-3);
+}
+
+.cartao__vazio {
+  color: var(--cor-texto-discreto);
+  font-style: italic;
+}
+
+/* ---------- Botões ---------- */
+
+.btn {
+  border: none;
+  border-radius: var(--raio-pequeno);
+  padding: var(--espaco-2) var(--espaco-3);
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn--primario {
+  background-color: var(--cor-primaria);
+  color: #fff;
+}
+
+.btn--primario:hover {
+  background-color: var(--cor-primaria-hover);
+}
+
+.btn--secundario {
+  background-color: transparent;
+  color: var(--cor-texto);
+  border: 1px solid var(--cor-borda);
+}
+
+.btn--secundario:hover {
+  background-color: var(--cor-superficie-alt);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--cor-texto-discreto);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: var(--espaco-3);
+  font-size: 0.95rem;
+}
+
+.btn-link:hover {
+  color: var(--cor-texto);
+}
+
+/* ---------- Formulários ---------- */
+
+.wrapper-formulario {
+  margin-top: var(--espaco-3);
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  padding: var(--espaco-3);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  max-width: 420px;
+}
+
+.campo-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.campo-formulario label {
+  font-size: 0.9rem;
+  color: var(--cor-texto-discreto);
+}
+
+.campo-formulario input {
+  background-color: var(--cor-superficie-alt);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pequeno);
+  padding: var(--espaco-2);
+  color: var(--cor-texto);
+  font-size: 1rem;
+}
+
+.campo-formulario input:focus {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 1px;
+}
+
+.acoes-formulario {
+  display: flex;
+  gap: var(--espaco-2);
+  justify-content: flex-end;
+}
+
+.erro-formulario {
+  background-color: var(--cor-perigo-fundo);
+  color: var(--cor-perigo);
+  border-radius: var(--raio-pequeno);
+  padding: var(--espaco-2);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ---------- Tabela de séries ---------- */
+
+.tabela-series {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-medio);
+  overflow: hidden;
+}
+
+.tabela-series th,
+.tabela-series td {
+  text-align: left;
+  padding: var(--espaco-2) var(--espaco-3);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tabela-series th {
+  color: var(--cor-texto-discreto);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tabela-series tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabela-series__celula-check {
+  width: 1%;
+}
+
+.tabela-series__checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--cor-primaria);
+}
+
+.tabela-series__linha--feita td {
+  color: var(--cor-texto-discreto);
+  text-decoration: line-through;
+}
+
+.tabela-series__linha--feita .tabela-series__celula-check {
+  text-decoration: none;
+}
+
+.progresso-series {
+  color: var(--cor-texto-discreto);
+  font-size: 0.9rem;
+  margin: 0 0 var(--espaco-2);
+}
+
+/* ---------- Telas ---------- */
+
+.tela[hidden] {
+  display: none;
+}
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 480px) {
+  .cabecalho-app__titulo {
+    font-size: 1.6rem;
+  }
+
+  .cabecalho-view {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .acoes-formulario {
+    justify-content: stretch;
+  }
+
+  .acoes-formulario .btn {
+    flex: 1;
+  }
+}
