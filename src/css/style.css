@@ -22,6 +22,11 @@
   --acento-suave: rgba(255, 108, 60, 0.14);
 
   /* Feedback */
+  /* Cardio usa um acento próprio, para separar visualmente da musculação. */
+  --cor-cardio: #35d6c3;    /* meta de tempo */
+  --cor-cardio-2: #7b8cff;  /* meta de distância */
+  --cardio-suave: rgba(53, 214, 195, 0.12);
+
   --cor-perigo: #ff7a7a;
   --cor-perigo-fundo: rgba(255, 107, 107, 0.12);
   --cor-sucesso: #4ad991;
@@ -38,7 +43,7 @@
 
   --sombra-flutuante: 0 18px 40px -22px rgba(0, 0, 0, 0.85);
 
-  --largura-maxima: 1000px;
+  --largura-maxima: 1440px;
   --fonte-principal: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -85,6 +90,18 @@ h1, h2, h3 {
   width: 0;
   height: 0;
   overflow: hidden;
+}
+
+/* Visível para leitores de tela, invisível na página. */
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Texto com preenchimento em gradiente (usado em números e no título). */
@@ -197,6 +214,234 @@ h1, h2, h3 {
   to   { opacity: 1; transform: none; }
 }
 
+/* ---------- Cronograma semanal ---------- */
+
+/* Os sete dias ficam sempre na mesma linha. Cada coluna tem largura mínima:
+   quando não cabem, o cronograma rola na horizontal em vez de quebrar linha. */
+.cronograma {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(172px, 1fr));
+  gap: var(--espaco-2);
+  overflow-x: auto;
+  padding-bottom: var(--espaco-2);
+  scroll-snap-type: x proximity;
+}
+
+.dia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  min-height: 200px;
+  padding: var(--espaco-2);
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  scroll-snap-align: start;
+}
+
+.dia__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-1);
+  padding-bottom: var(--espaco-2);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.dia__nome {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--cor-texto-discreto);
+}
+
+.dia__etiqueta-hoje {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background-image: var(--gradiente-acento);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.dia__conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  flex: 1;
+}
+
+/* O dia de hoje ganha contorno de acento. */
+.dia--hoje {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 12px 30px -22px rgba(255, 108, 60, 0.9);
+}
+
+.dia--hoje .dia__nome {
+  color: var(--cor-primaria);
+}
+
+/* Cartão de treino dentro do dia — é um <button>, o cartão inteiro é clicável. */
+.treino {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background-color: var(--cor-superficie-alt);
+  border: 1px solid var(--cor-borda);
+  border-left: 3px solid var(--cor-primaria);
+  border-radius: var(--raio-medio);
+  padding: var(--espaco-2) var(--espaco-3);
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.treino:hover {
+  transform: translateY(-2px);
+  border-color: var(--cor-borda-clara);
+  border-left-color: var(--cor-primaria);
+  background-color: #262c37;
+}
+
+.treino:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+.treino__nome {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.treino__descricao {
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--cor-texto-discreto);
+}
+
+.treino__resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--espaco-2);
+  margin-top: var(--espaco-2);
+  padding-top: var(--espaco-2);
+  border-top: 1px solid var(--cor-borda);
+  font-size: 0.75rem;
+  color: var(--cor-texto-discreto);
+}
+
+.treino__resumo strong {
+  color: var(--cor-texto);
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bloco de cardio: mais baixo que o treino e com acento próprio. */
+.cardio-dia {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background-color: var(--cardio-suave);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--cor-cardio);
+  border-radius: var(--raio-pequeno);
+  padding: var(--espaco-2) var(--espaco-3);
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cardio-dia:hover {
+  transform: translateY(-2px);
+  border-color: var(--cor-cardio);
+  border-left-color: var(--cor-cardio);
+}
+
+.cardio-dia:focus-visible {
+  outline: 2px solid var(--cor-cardio);
+  outline-offset: 2px;
+}
+
+.cardio-dia__topo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--cor-cardio);
+}
+
+.cardio-dia__icone {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.cardio-dia__meta {
+  font-size: 0.75rem;
+  color: var(--cor-texto-discreto);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barrinha de progresso da meta, direto no cartão do dia. */
+.cardio-dia__barra {
+  display: block;
+  height: 3px;
+  margin-top: var(--espaco-1);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.cardio-dia__preenchido {
+  display: block;
+  height: 100%;
+  width: 0;
+  background-color: var(--cor-cardio);
+  transition: width 0.35s ease;
+}
+
+.descanso {
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-2);
+  text-align: center;
+  font-size: 0.85rem;
+  color: #5c6474;
+}
+
+.descanso__icone {
+  width: 26px;
+  height: 26px;
+}
+
+/* Etiqueta do dia no topo da tela do treino. */
+.etiqueta-dia {
+  display: inline-block;
+  margin-bottom: var(--espaco-1);
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--acento-suave);
+  color: var(--cor-primaria);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
 /* ---------- Cartões ---------- */
 
 .grade-cartoes {
@@ -252,32 +497,23 @@ h1, h2, h3 {
 .cartao__rodape {
   margin-top: auto;
   padding-top: var(--espaco-3);
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
 }
 
-.cartao__resumo {
-  list-style: none;
-  margin: var(--espaco-3) 0 0;
-  padding: var(--espaco-2) 0 0;
-  border-top: 1px solid var(--cor-borda);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--espaco-1) var(--espaco-4);
-  color: var(--cor-texto-discreto);
-  font-size: 0.8rem;
+/* O botão de abrir ocupa o espaço; o de remover fica no canto. */
+.cartao__rodape [data-acao^="abrir"] {
+  flex: 1;
+  justify-content: center;
 }
 
 /* Dá peso visual aos números das métricas. */
-.cartao__resumo strong,
 .cartao__meta strong {
-  display: block;
   color: var(--cor-texto);
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-}
-
-.cartao__meta strong {
-  display: inline;
 }
 
 /* ---------- Painel de métricas (tela do treino) ---------- */
@@ -458,6 +694,28 @@ h1, h2, h3 {
   color: var(--cor-primaria);
 }
 
+/* Botão só de ícone, usado nas ações de remover. */
+.btn--icone {
+  background-color: transparent;
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto-discreto);
+  padding: 8px;
+}
+
+.btn--icone:hover {
+  border-color: var(--cor-perigo);
+  color: var(--cor-perigo);
+  background-color: var(--cor-perigo-fundo);
+}
+
+/* Linha de botões abaixo de uma lista/tabela. */
+.acoes-tela {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  margin-top: var(--espaco-3);
+}
+
 .btn-link {
   background: none;
   border: none;
@@ -498,7 +756,7 @@ h1, h2, h3 {
   display: flex;
   flex-direction: column;
   gap: var(--espaco-3);
-  max-width: 440px;
+  max-width: 540px;
 }
 
 .campo-formulario {
@@ -521,6 +779,7 @@ h1, h2, h3 {
   border-radius: var(--raio-pequeno);
   padding: 10px var(--espaco-3);
   color: var(--cor-texto);
+  font-family: inherit;
   font-size: 1rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -533,6 +792,59 @@ h1, h2, h3 {
   outline: none;
   border-color: var(--cor-primaria);
   box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+/* ---------- Seleção de dias (pílulas) ---------- */
+
+.campo-dias {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.campo-dias legend {
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cor-texto-discreto);
+}
+
+.campo-dias__opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  margin-top: var(--espaco-2);
+}
+
+.dia-opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  padding: 7px var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background-color: var(--cor-superficie-alt);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.dia-opcao:hover {
+  border-color: var(--cor-borda-clara);
+}
+
+.dia-opcao input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--cor-primaria);
+}
+
+.dia-opcao:has(input:checked) {
+  border-color: var(--cor-primaria);
+  background-color: var(--acento-suave);
+  color: var(--cor-primaria);
 }
 
 .acoes-formulario {
@@ -549,6 +861,126 @@ h1, h2, h3 {
   padding: 10px var(--espaco-3);
   font-size: 0.9rem;
   margin: 0;
+}
+
+/* ---------- Metas de cardio ---------- */
+
+.metas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espaco-4) var(--espaco-5);
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  padding: var(--espaco-4);
+}
+
+/* Girar o SVG faz os anéis começarem no topo, e não às 3 horas. */
+.aneis {
+  width: 168px;
+  height: 168px;
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+}
+
+.anel__trilha,
+.anel__arco {
+  fill: none;
+  stroke-width: 12;
+}
+
+.anel__trilha {
+  stroke: var(--cor-superficie-alt);
+}
+
+.anel__arco {
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+[data-anel="tempo"] .anel__arco {
+  stroke: var(--cor-cardio);
+}
+
+[data-anel="distancia"] .anel__arco {
+  stroke: var(--cor-cardio-2);
+}
+
+.anel--oculto {
+  display: none;
+}
+
+.legenda-metas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta[hidden] {
+  display: none;
+}
+
+/* O ponto colorido liga a legenda ao anel correspondente. */
+.meta__rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--cor-texto-discreto);
+}
+
+.meta__rotulo::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+[data-meta="tempo"] .meta__rotulo::before {
+  background-color: var(--cor-cardio);
+}
+
+[data-meta="distancia"] .meta__rotulo::before {
+  background-color: var(--cor-cardio-2);
+}
+
+.meta__numeros {
+  font-size: 0.9rem;
+  color: var(--cor-texto-discreto);
+  font-variant-numeric: tabular-nums;
+}
+
+.meta__numeros strong {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--cor-texto);
+}
+
+.meta__restante {
+  font-size: 0.8rem;
+  color: var(--cor-texto-discreto);
+}
+
+.meta--concluida .meta__restante {
+  font-weight: 700;
+}
+
+[data-meta="tempo"].meta--concluida .meta__restante {
+  color: var(--cor-cardio);
+}
+
+[data-meta="distancia"].meta--concluida .meta__restante {
+  color: var(--cor-cardio-2);
 }
 
 /* ---------- Progresso das séries ---------- */
@@ -644,13 +1076,29 @@ h1, h2, h3 {
   accent-color: var(--cor-primaria);
 }
 
-.tabela-series__linha--feita td {
-  color: var(--cor-texto-discreto);
-  text-decoration: line-through;
+.tabela-series__celula-acoes {
+  width: 1%;
+  text-align: right;
 }
 
-.tabela-series__linha--feita td:first-child {
-  text-decoration: none;
+/* Só os dados são riscados — o checkbox e o botão de remover continuam legíveis. */
+/* Na tabela de cardio o acento é o do cardio, não o da musculação. */
+.tabela-series--cardio .tabela-series__checkbox {
+  accent-color: var(--cor-cardio);
+}
+
+.progresso-sessoes {
+  color: var(--cor-texto-discreto);
+  font-size: 0.85rem;
+  margin: var(--espaco-4) 0 var(--espaco-2);
+}
+
+.tabela-series__linha--feita td {
+  color: var(--cor-texto-discreto);
+}
+
+.tabela-series__linha--feita [data-celula] {
+  text-decoration: line-through;
 }
 
 /* ---------- Movimento reduzido ---------- */
@@ -667,6 +1115,11 @@ h1, h2, h3 {
 /* ---------- Responsivo ---------- */
 
 @media (max-width: 560px) {
+  /* Em tela estreita o cronograma continua em uma linha só, rolando na horizontal. */
+  .dia {
+    min-height: 160px;
+  }
+
   .cabecalho-app__titulo {
     font-size: 1.9rem;
   }

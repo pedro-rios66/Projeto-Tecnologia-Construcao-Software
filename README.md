@@ -46,8 +46,9 @@ As funcionalidades abaixo compõem o **escopo inicial planejado**. Elas são imp
 
 ### Gerenciamento de treinos
 
-- criar treino;
-- nomear treino;
+- criar treino, com nome, descrição e um ou mais dias da semana;
+- visualizar os treinos como um **cronograma semanal**, com um cartão por dia,
+  destaque para o dia corrente e indicação de descanso nos dias livres;
 - adicionar exercícios ao treino;
 - remover exercícios do treino.
 
@@ -55,9 +56,12 @@ As funcionalidades abaixo compõem o **escopo inicial planejado**. Elas são imp
 
 Para cada exercício:
 
-- número da série;
+- número da série (derivado da ordem, não armazenado);
 - peso utilizado;
-- número de repetições.
+- número de repetições;
+- marcação de série feita, com barra de progresso;
+- remoção de séries;
+- botão "Repetir última", que registra uma cópia da série anterior em um clique.
 
 ### Histórico
 
@@ -67,6 +71,18 @@ Visualização de:
 - exercícios realizados;
 - pesos utilizados;
 - repetições realizadas.
+
+### Cardio
+
+Cada treino pode ter um cardio associado, que aparece no cartão do dia logo
+abaixo do treino e tem tela própria:
+
+- modalidade (esteira, bicicleta, etc.);
+- meta **acumulada** de tempo (min) e/ou de distância (km) — pelo menos uma das duas;
+- registro de sessões, cada uma com tempo e/ou distância;
+- marcação de sessão concluída — **apenas sessões concluídas somam para a meta**;
+- anéis de progresso concêntricos (tempo por fora, distância por dentro) mostrando quanto falta para cada meta;
+- remoção de sessões e botão "Repetir última".
 
 ### Métricas
 
