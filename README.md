@@ -108,7 +108,7 @@ Versão atual do projeto:
 | Tecnologia | Uso no projeto |
 |---|---|
 | HTML5 | estrutura da interface |
-| CSS3 | estilização e layout |
+| CSS3 | estilização e layout responsivo (mobile first) |
 | JavaScript (ES6+) | lógica da aplicação e interações |
 | `<template>` HTML | marcação dos elementos repetidos, clonada pelo JS (sem HTML em strings) |
 | SVG inline | ícones (`<symbol>` + `<use>`), sem imagens externas nem biblioteca |

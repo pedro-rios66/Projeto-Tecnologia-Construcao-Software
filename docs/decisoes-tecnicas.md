@@ -118,6 +118,47 @@ encontrem, mas não deve aparecer. Usar `display: none` quebra as referências
 fluxo visual sem removê-lo da renderização:
 `position: absolute; width: 0; height: 0; overflow: hidden`.
 
+## Mobile first
+
+O GymLog é usado em pé, na academia, com uma mão, entre séries — não numa mesa.
+O CSS foi reescrito nessa ordem: **as regras base descrevem o celular** e os
+blocos `@media (min-width: ...)` só acrescentam espaço e colunas conforme a tela
+cresce. Antes era o contrário (`max-width`), o que fazia o telefone carregar o
+layout de desktop para depois desfazê-lo.
+
+Dois breakpoints de largura, ambos `min-width`:
+
+- **`620px`** — tablet retrato: cabeçalhos e barras de ação voltam a ficar lado a
+  lado, formulários e anéis de cardio assumem layout horizontal.
+- **`1024px`** — desktop: mais respiro entre as seções, cartões de exercício e
+  células do cronograma maiores.
+
+Mais pontos que esses dois seriam superfície a manter sem ganho real — entre um
+tablet e um monitor o layout muda pouco. As evidências visuais nos três viewports
+padronizados estão em `docs/evidencias/etapa-03/` e descritas em
+`docs/etapa-03.md`.
+
+**Alvos de toque.** `min-height: 44px` em `.btn` e `.btn-link`, `min-width: 44px`
+em `.btn--icone` e checkbox de 18px para 24px. O valor de 44px é a recomendação
+das diretrizes de acessibilidade para toque. Isso vale em todas as telas, não só
+no celular: no desktop deixa os botões um pouco maiores, o que não atrapalha.
+
+**Cronograma abre no dia de hoje.** No celular cabem cerca de dois dias na tela,
+então `renderizarTreinos` posiciona a rolagem horizontal no cartão de hoje
+(`lista.scrollLeft = cartaoDeHoje.offsetLeft`). Para o `offsetLeft` ser medido em
+relação ao cronograma, `.cronograma` recebeu `position: relative`.
+
+**Tabelas rolam sozinhas.** Séries e sessões têm cinco colunas, que não cabem em
+360px. Cada tabela ficou dentro de um `.tabela-rolavel` com `overflow-x: auto` e
+`min-width` na tabela — quem rola é o contêiner, nunca a página inteira.
+
+**Outros ajustes.** Cabeçalho de view empilha e o botão de ação ocupa a largura
+toda; painel de métricas mantém as três colunas (mais compactas) em vez de
+empilhar, poupando altura; anéis de cardio ficam acima da legenda; `theme-color`
+e `viewport-fit=cover` no `<head>`; `-webkit-tap-highlight-color: transparent`
+para remover o flash cinza ao tocar; e `@media (hover: none)` desliga os efeitos
+de elevação, que em tela de toque só ficavam "grudados" após o toque.
+
 ## Identidade visual
 
 Tema escuro com um acento em gradiente (laranja → âmbar) aplicado de forma

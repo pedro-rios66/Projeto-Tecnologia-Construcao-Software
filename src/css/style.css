@@ -54,6 +54,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
   font-family: var(--fonte-principal);
   color: var(--cor-texto);
   line-height: 1.55;
@@ -118,7 +119,7 @@ h1, h2, h3 {
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid var(--cor-borda);
-  padding: var(--espaco-5) var(--espaco-3) var(--espaco-4);
+  padding: var(--espaco-4) var(--espaco-3);
   background:
     radial-gradient(600px 200px at 18% -60%, rgba(255, 108, 60, 0.35), transparent 70%),
     linear-gradient(180deg, #191d25, var(--cor-fundo));
@@ -133,7 +134,7 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: var(--espaco-2);
-  font-size: 2.4rem;
+  font-size: 1.9rem;
   font-weight: 800;
   background: linear-gradient(135deg, #ffffff, #ffc4b3);
   -webkit-background-clip: text;
@@ -168,16 +169,19 @@ h1, h2, h3 {
 .principal-app {
   max-width: var(--largura-maxima);
   margin: 0 auto;
-  padding: var(--espaco-4) var(--espaco-3);
+  padding: var(--espaco-3);
 }
 
 .cabecalho-view {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--espaco-3);
   margin-bottom: var(--espaco-4);
-  flex-wrap: wrap;
+}
+
+.cabecalho-view .btn {
+  justify-content: center;
 }
 
 .cabecalho-view h2 {
@@ -219,6 +223,7 @@ h1, h2, h3 {
 /* Os sete dias ficam sempre na mesma linha. Cada coluna tem largura mínima:
    quando não cabem, o cronograma rola na horizontal em vez de quebrar linha. */
 .cronograma {
+  position: relative; /* referência para o app.js rolar até o dia de hoje */
   display: grid;
   grid-template-columns: repeat(7, minmax(172px, 1fr));
   gap: var(--espaco-2);
@@ -231,7 +236,7 @@ h1, h2, h3 {
   display: flex;
   flex-direction: column;
   gap: var(--espaco-2);
-  min-height: 200px;
+  min-height: 160px;
   padding: var(--espaco-2);
   background-color: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
@@ -456,7 +461,7 @@ h1, h2, h3 {
   background-color: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-grande);
-  padding: var(--espaco-4);
+  padding: var(--espaco-3);
   display: flex;
   flex-direction: column;
   gap: var(--espaco-1);
@@ -521,7 +526,7 @@ h1, h2, h3 {
 .painel-metricas {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--espaco-3);
+  gap: var(--espaco-2);
   margin-bottom: var(--espaco-4);
 }
 
@@ -529,13 +534,13 @@ h1, h2, h3 {
   background-color: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-medio);
-  padding: var(--espaco-3);
+  padding: var(--espaco-2);
   text-align: center;
 }
 
 .painel-metricas__valor {
   display: block;
-  font-size: 2rem;
+  font-size: 1.7rem;
   font-weight: 800;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -653,7 +658,8 @@ h1, h2, h3 {
 .btn {
   border: none;
   border-radius: var(--raio-pequeno);
-  padding: 10px var(--espaco-3);
+  padding: 11px var(--espaco-3);
+  min-height: 44px; /* alvo de toque confortável no celular */
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
@@ -700,6 +706,8 @@ h1, h2, h3 {
   border: 1px solid var(--cor-borda);
   color: var(--cor-texto-discreto);
   padding: 8px;
+  min-width: 44px;
+  justify-content: center;
 }
 
 .btn--icone:hover {
@@ -716,13 +724,19 @@ h1, h2, h3 {
   margin-top: var(--espaco-3);
 }
 
+.acoes-tela .btn {
+  flex: 1 1 150px;
+  justify-content: center;
+}
+
 .btn-link {
   background: none;
   border: none;
   color: var(--cor-texto-discreto);
   cursor: pointer;
-  padding: 0;
-  margin-bottom: var(--espaco-3);
+  padding: var(--espaco-2) 0;
+  min-height: 44px;
+  margin-bottom: var(--espaco-1);
   font-size: 0.95rem;
   font-weight: 600;
   display: inline-flex;
@@ -748,7 +762,7 @@ h1, h2, h3 {
   background-color: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-grande);
-  padding: var(--espaco-4);
+  padding: var(--espaco-3);
   animation: aparecer-tela 0.2s ease both;
 }
 
@@ -822,7 +836,8 @@ h1, h2, h3 {
   display: inline-flex;
   align-items: center;
   gap: var(--espaco-1);
-  padding: 7px var(--espaco-3);
+  padding: 10px var(--espaco-3);
+  min-height: 44px;
   border: 1px solid var(--cor-borda);
   border-radius: 999px;
   background-color: var(--cor-superficie-alt);
@@ -849,8 +864,12 @@ h1, h2, h3 {
 
 .acoes-formulario {
   display: flex;
+  flex-direction: column-reverse;
   gap: var(--espaco-2);
-  justify-content: flex-end;
+}
+
+.acoes-formulario .btn {
+  justify-content: center;
 }
 
 .erro-formulario {
@@ -867,9 +886,9 @@ h1, h2, h3 {
 
 .metas {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--espaco-4) var(--espaco-5);
+  gap: var(--espaco-4);
   background-color: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-grande);
@@ -878,8 +897,8 @@ h1, h2, h3 {
 
 /* Girar o SVG faz os anéis começarem no topo, e não às 3 horas. */
 .aneis {
-  width: 168px;
-  height: 168px;
+  width: 148px;
+  height: 148px;
   flex-shrink: 0;
   transform: rotate(-90deg);
 }
@@ -913,8 +932,9 @@ h1, h2, h3 {
 
 .legenda-metas {
   display: flex;
-  flex-direction: column;
-  gap: var(--espaco-4);
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--espaco-3) var(--espaco-5);
 }
 
 .meta {
@@ -1017,8 +1037,14 @@ h1, h2, h3 {
 
 /* ---------- Tabela de séries ---------- */
 
+/* Em tela estreita a tabela rola dentro deste contêiner, e não a página toda. */
+.tabela-rolavel {
+  overflow-x: auto;
+}
+
 .tabela-series {
   width: 100%;
+  min-width: 320px;
   border-spacing: 0;
   background-color: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
@@ -1031,7 +1057,7 @@ h1, h2, h3 {
 .tabela-series th,
 .tabela-series td {
   text-align: left;
-  padding: var(--espaco-3);
+  padding: var(--espaco-2);
   border-bottom: 1px solid var(--cor-borda);
 }
 
@@ -1070,8 +1096,8 @@ h1, h2, h3 {
 }
 
 .tabela-series__checkbox {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   accent-color: var(--cor-primaria);
 }
@@ -1112,38 +1138,148 @@ h1, h2, h3 {
   }
 }
 
-/* ---------- Responsivo ---------- */
+/* ---------- Responsivo (mobile first) ----------
+   Tudo acima descreve o layout no celular, que é onde o app é usado de fato:
+   em pé, com uma mão, entre séries. Os blocos abaixo só acrescentam espaço e
+   colunas conforme a tela cresce.
 
-@media (max-width: 560px) {
-  /* Em tela estreita o cronograma continua em uma linha só, rolando na horizontal. */
-  .dia {
-    min-height: 160px;
+   Dois breakpoints de largura:
+     620px  — tablet retrato: cabeçalho e barras de ação voltam a ficar lado a
+              lado; formulários e anéis de cardio ganham layout horizontal.
+     1024px — desktop: mais respiro entre as seções, cartões e células do
+              cronograma maiores, container usa a largura total. */
+
+@media (min-width: 620px) {
+  .cabecalho-app {
+    padding: var(--espaco-5) var(--espaco-3) var(--espaco-4);
   }
 
   .cabecalho-app__titulo {
-    font-size: 1.9rem;
+    font-size: 2.4rem;
+  }
+
+  .principal-app {
+    padding: var(--espaco-4) var(--espaco-3);
   }
 
   .cabecalho-view {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .cabecalho-view .btn {
-    width: 100%;
-    justify-content: center;
+    flex: 0 0 auto;
+  }
+
+  .cartao,
+  .wrapper-formulario {
+    padding: var(--espaco-4);
+  }
+
+  .dia {
+    min-height: 200px;
   }
 
   .painel-metricas {
-    grid-template-columns: 1fr;
+    gap: var(--espaco-3);
+  }
+
+  .painel-metricas__item {
+    padding: var(--espaco-3);
+  }
+
+  .painel-metricas__valor {
+    font-size: 2rem;
+  }
+
+  .tabela-series th,
+  .tabela-series td {
+    padding: var(--espaco-3);
+  }
+
+  .acoes-tela .btn {
+    flex: 0 0 auto;
   }
 
   .acoes-formulario {
-    flex-direction: column-reverse;
+    flex-direction: row;
+    justify-content: flex-end;
   }
 
-  .acoes-formulario .btn {
-    width: 100%;
-    justify-content: center;
+  /* Anéis à esquerda e legenda empilhada à direita. */
+  .metas {
+    flex-direction: row;
+    gap: var(--espaco-5);
+    padding: var(--espaco-4);
+  }
+
+  .legenda-metas {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: var(--espaco-4);
+  }
+
+  .aneis {
+    width: 168px;
+    height: 168px;
+  }
+}
+
+/* Desktop: a interface passa a ter espaço de sobra, então as seções respiram
+   e os elementos em grade ficam maiores. */
+@media (min-width: 1024px) {
+  .principal-app {
+    padding: var(--espaco-4) var(--espaco-5);
+  }
+
+  .subtitulo-secao {
+    margin: var(--espaco-5) 0 var(--espaco-3);
+  }
+
+  /* Células do cronograma maiores; os sete dias ainda cabem sem rolagem. */
+  .cronograma {
+    grid-template-columns: repeat(7, minmax(180px, 1fr));
+    gap: var(--espaco-3);
+  }
+
+  .dia {
+    min-height: 220px;
+    padding: var(--espaco-3);
+  }
+
+  /* Cartões de exercício mais largos. */
+  .grade-cartoes {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--espaco-4);
+  }
+
+  .painel-metricas {
+    gap: var(--espaco-3);
+  }
+
+  .painel-metricas__valor {
+    font-size: 2.2rem;
+  }
+
+  .metas {
+    padding: var(--espaco-5);
+  }
+
+  .aneis {
+    width: 188px;
+    height: 188px;
+  }
+}
+
+/* Mouse disponível: efeitos de elevação só fazem sentido aqui. */
+@media (hover: none) {
+  .cartao:hover,
+  .treino:hover,
+  .cardio-dia:hover,
+  .btn--primario:hover {
+    transform: none;
   }
 }

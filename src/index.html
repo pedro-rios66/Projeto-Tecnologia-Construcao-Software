@@ -2,7 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f14">
   <title>GymLog — Seu diário de treinos</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -274,18 +275,20 @@
         <div class="progresso-series__barra"><span class="progresso-series__preenchido"></span></div>
         <p class="progresso-series__texto"></p>
       </div>
-      <table class="tabela-series">
-        <thead>
-          <tr>
-            <th scope="col">Feito</th>
-            <th scope="col">Série</th>
-            <th scope="col">Peso</th>
-            <th scope="col">Reps</th>
-            <th scope="col"><span class="visualmente-oculto">Ações</span></th>
-          </tr>
-        </thead>
-        <tbody id="corpo-tabela-series"></tbody>
-      </table>
+      <div class="tabela-rolavel">
+        <table class="tabela-series">
+          <thead>
+            <tr>
+              <th scope="col">Feito</th>
+              <th scope="col">Série</th>
+              <th scope="col">Peso</th>
+              <th scope="col">Reps</th>
+              <th scope="col"><span class="visualmente-oculto">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela-series"></tbody>
+        </table>
+      </div>
       <div class="acoes-tela">
         <button id="btn-nova-serie" class="btn btn--primario" type="button">
           <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Adicionar série
@@ -357,18 +360,20 @@
 
       <h3 class="subtitulo-secao">Sessões</h3>
       <p id="progresso-sessoes" class="progresso-sessoes"></p>
-      <table class="tabela-series tabela-series--cardio">
-        <thead>
-          <tr>
-            <th scope="col">Feito</th>
-            <th scope="col">Sessão</th>
-            <th scope="col">Tempo</th>
-            <th scope="col">Distância</th>
-            <th scope="col"><span class="visualmente-oculto">Ações</span></th>
-          </tr>
-        </thead>
-        <tbody id="corpo-tabela-sessoes"></tbody>
-      </table>
+      <div class="tabela-rolavel">
+        <table class="tabela-series tabela-series--cardio">
+          <thead>
+            <tr>
+              <th scope="col">Feito</th>
+              <th scope="col">Sessão</th>
+              <th scope="col">Tempo</th>
+              <th scope="col">Distância</th>
+              <th scope="col"><span class="visualmente-oculto">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela-sessoes"></tbody>
+        </table>
+      </div>
       <div class="acoes-tela">
         <button id="btn-nova-sessao" class="btn btn--primario" type="button">
           <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Registrar sessão

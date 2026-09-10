@@ -461,6 +461,7 @@ function renderizarTreinos() {
   }
 
   const hoje = diaSemanaDeHoje();
+  let cartaoDeHoje = null;
 
   // Um cartão por dia da semana, sempre os sete, mesmo os de descanso.
   DIAS_SEMANA.forEach(function (nomeDia, indiceDia) {
@@ -471,6 +472,7 @@ function renderizarTreinos() {
     if (indiceDia === hoje) {
       cartaoDia.classList.add("dia--hoje");
       cartaoDia.querySelector(".dia__etiqueta-hoje").hidden = false;
+      cartaoDeHoje = cartaoDia;
     }
 
     const treinos = treinosDoDia(indiceDia);
@@ -487,6 +489,12 @@ function renderizarTreinos() {
 
     lista.appendChild(cartaoDia);
   });
+
+  // No celular cabem uns dois dias na tela: começar no dia de hoje evita
+  // que o usuário tenha de rolar para achar o treino da vez.
+  if (cartaoDeHoje) {
+    lista.scrollLeft = cartaoDeHoje.offsetLeft;
+  }
 }
 
 function criarBotaoTreino(treino) {
