@@ -51,6 +51,19 @@
   box-sizing: border-box;
 }
 
+/* Garante que o atributo "hidden" sempre esconda o elemento. Sem isso, um
+   componente que declara seu próprio "display" (ex.: .btn usa
+   display:inline-flex, .painel-metricas usa display:grid) venceria a regra
+   padrão do navegador [hidden]{display:none}, porque a origem "author" tem
+   prioridade sobre a origem "user-agent" mesmo com especificidade igual.
+   Ficou visível ao automatizar o fluxo da Etapa 04: o botão "Repetir última"
+   e o painel de métricas apareciam mesmo com hidden=true. Uma única regra
+   global no topo do arquivo resolve para qualquer componente atual ou
+   futuro, em vez de repetir "<seletor>[hidden]" em cada um. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -207,10 +220,6 @@ h1, h2, h3 {
 
 .tela {
   animation: aparecer-tela 0.28s ease both;
-}
-
-.tela[hidden] {
-  display: none;
 }
 
 @keyframes aparecer-tela {
@@ -943,10 +952,6 @@ h1, h2, h3 {
   gap: 2px;
 }
 
-.meta[hidden] {
-  display: none;
-}
-
 /* O ponto colorido liga a legenda ao anel correspondente. */
 .meta__rotulo {
   display: flex;
@@ -1007,10 +1012,6 @@ h1, h2, h3 {
 
 .progresso-series {
   margin: 0 0 var(--espaco-3);
-}
-
-.progresso-series[hidden] {
-  display: none;
 }
 
 .progresso-series__barra {

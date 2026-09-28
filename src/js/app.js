@@ -182,39 +182,40 @@ function removerSessaoCardio(idTreino, idSessao) {
   return treino.cardio.sessoes.splice(indice, 1)[0];
 }
 
+// .find + .some localizam o treino-dono; só depois .findIndex acha a posição
+// exata para o .splice. Encadear métodos de array evita o laço manual.
 function removerExercicio(idExercicio) {
-  for (const treino of estado.treinos) {
-    const indice = treino.exercicios.findIndex(function (e) { return e.id === idExercicio; });
-    if (indice !== -1) {
-      return treino.exercicios.splice(indice, 1)[0];
-    }
-  }
-  return null;
+  const treinoDono = estado.treinos.find(function (t) {
+    return t.exercicios.some(function (e) { return e.id === idExercicio; });
+  });
+  if (!treinoDono) return null;
+
+  const indice = treinoDono.exercicios.findIndex(function (e) { return e.id === idExercicio; });
+  return treinoDono.exercicios.splice(indice, 1)[0];
 }
 
 function removerSerie(idSerie) {
-  for (const treino of estado.treinos) {
-    for (const exercicio of treino.exercicios) {
-      const indice = exercicio.series.findIndex(function (s) { return s.id === idSerie; });
-      if (indice !== -1) {
-        return exercicio.series.splice(indice, 1)[0];
-      }
-    }
-  }
-  return null;
+  const todosOsExercicios = estado.treinos.flatMap(function (t) { return t.exercicios; });
+  const exercicioDono = todosOsExercicios.find(function (e) {
+    return e.series.some(function (s) { return s.id === idSerie; });
+  });
+  if (!exercicioDono) return null;
+
+  const indice = exercicioDono.series.findIndex(function (s) { return s.id === idSerie; });
+  return exercicioDono.series.splice(indice, 1)[0];
 }
 
+// Achata treinos -> exercícios -> séries em uma lista única antes de buscar.
 function alternarSerieFeita(idSerie) {
-  for (const treino of estado.treinos) {
-    for (const exercicio of treino.exercicios) {
-      const serie = exercicio.series.find(function (s) { return s.id === idSerie; });
-      if (serie) {
-        serie.feita = !serie.feita;
-        return serie;
-      }
-    }
-  }
-  return null;
+  const todasAsSeries = estado.treinos
+    .flatMap(function (t) { return t.exercicios; })
+    .flatMap(function (e) { return e.series; });
+
+  const serie = todasAsSeries.find(function (s) { return s.id === idSerie; });
+  if (!serie) return null;
+
+  serie.feita = !serie.feita;
+  return serie;
 }
 
 /* ----------------------------------------------------------
@@ -225,12 +226,11 @@ function buscarTreino(idTreino) {
   return estado.treinos.find(function (t) { return t.id === idTreino; });
 }
 
+// .flatMap achata a lista de exercícios de todos os treinos em uma só lista,
+// para então usar .find nela — evita um laço aninhado manual.
 function buscarExercicio(idExercicio) {
-  for (const treino of estado.treinos) {
-    const exercicio = treino.exercicios.find(function (e) { return e.id === idExercicio; });
-    if (exercicio) return exercicio;
-  }
-  return null;
+  const todosOsExercicios = estado.treinos.flatMap(function (t) { return t.exercicios; });
+  return todosOsExercicios.find(function (e) { return e.id === idExercicio; }) || null;
 }
 
 /* ----------------------------------------------------------
@@ -776,7 +776,19 @@ function diasSelecionados() {
 
 // Os formulários fecham ao entrar na tela, não a cada re-renderização: assim eles
 // permanecem abertos enquanto o usuário registra vários itens seguidos.
+//
+// Situação inválida tratada explicitamente: idTreino pode não existir mais (ex.:
+// removido em outra aba, ou uma chamada direta feita pelo console com um id
+// qualquer). Sem essa checagem, mostrarTela("treino") ainda seria executada e
+// a tela mostraria os dados do treino anterior — uma tela "fantasma". Em vez
+// disso, a navegação é abortada e o app volta para um estado conhecido.
 function abrirTreino(idTreino) {
+  if (!buscarTreino(idTreino)) {
+    console.warn("abrirTreino: nenhum treino com id " + idTreino + ". Voltando para a lista.");
+    irParaTreinos();
+    return;
+  }
+
   estado.idTreinoAtual = idTreino;
   esconderFormularioNovoExercicio();
   renderizarTreino();
@@ -784,6 +796,13 @@ function abrirTreino(idTreino) {
 }
 
 function abrirExercicio(idExercicio) {
+  if (!buscarExercicio(idExercicio)) {
+    console.warn("abrirExercicio: nenhum exercício com id " + idExercicio + ".");
+    // Volta para o treino atual, se ele ainda existir; senão, para a lista.
+    buscarTreino(estado.idTreinoAtual) ? abrirTreino(estado.idTreinoAtual) : irParaTreinos();
+    return;
+  }
+
   estado.idExercicioAtual = idExercicio;
   esconderFormularioNovaSerie();
   renderizarExercicio();
@@ -792,6 +811,13 @@ function abrirExercicio(idExercicio) {
 
 // O cardio pertence ao treino, então é identificado pelo id do treino dono.
 function abrirCardio(idTreino) {
+  const treino = buscarTreino(idTreino);
+  if (!treino || !treino.cardio) {
+    console.warn("abrirCardio: treino " + idTreino + " inexistente ou sem cardio.");
+    irParaTreinos();
+    return;
+  }
+
   estado.idTreinoAtual = idTreino;
   esconderFormularioNovaSessao();
   esconderFormularioMeta();

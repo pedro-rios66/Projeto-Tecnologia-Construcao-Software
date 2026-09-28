@@ -359,3 +359,90 @@ passou a ser um toque no caso mais comum.
 (`.progresso-series__preenchido`) definindo `style.width` com o percentual de
 séries feitas, além do texto. É a única métrica escrita diretamente como estilo
 inline, por ser um valor calculado que não caberia numa classe fixa.
+
+---
+
+# Decisões técnicas — Etapa 04 (interatividade com JavaScript)
+
+Etapa de auditoria: não foi adicionado escopo novo, e sim reforçada a
+interatividade que já existia, para deixar explícitos os requisitos avaliados
+nesta etapa (DOM, eventos, validação, arrays, iteração, situações inválidas).
+Detalhamento completo em `docs/etapa-04.md`.
+
+## Fim dos laços `for` — só métodos de iteração
+
+`buscarExercicio`, `removerExercicio`, `removerSerie` e `alternarSerieFeita`
+usavam `for...of` (às vezes aninhado) para navegar `treinos -> exercícios ->
+séries`. Reescritos com `.find`, `.some`, `.findIndex` e `.flatMap`:
+
+```js
+// antes
+function alternarSerieFeita(idSerie) {
+  for (const treino of estado.treinos) {
+    for (const exercicio of treino.exercicios) {
+      const serie = exercicio.series.find(s => s.id === idSerie);
+      if (serie) { serie.feita = !serie.feita; return serie; }
+    }
+  }
+  return null;
+}
+
+// depois
+function alternarSerieFeita(idSerie) {
+  const todasAsSeries = estado.treinos
+    .flatMap(t => t.exercicios)
+    .flatMap(e => e.series);
+  const serie = todasAsSeries.find(s => s.id === idSerie);
+  if (!serie) return null;
+  serie.feita = !serie.feita;
+  return serie;
+}
+```
+
+`removerExercicio` e `removerSerie` seguem o mesmo padrão: primeiro `.find` +
+`.some` acham o objeto "dono" (o treino ou o exercício), depois `.findIndex` +
+`.splice` removem o item exato. O arquivo `app.js` não tem mais nenhuma
+ocorrência de `for (`.
+
+## Navegação recusa ids inexistentes
+
+`abrirTreino`, `abrirExercicio` e `abrirCardio` passaram a checar, antes de
+qualquer coisa, se o id recebido corresponde a algo que ainda existe
+(`buscarTreino` / `buscarExercicio` devolvendo `null`). Sem essa checagem,
+`mostrarTela(...)` era chamada de qualquer forma ao final da função — mesmo
+quando a renderização interna abortava cedo — e a tela trocava para um
+conteúdo desatualizado ("tela fantasma") em vez de mostrar algo consistente.
+Agora a função recusa a navegação, registra um `console.warn` e redireciona
+para uma tela segura (a lista de treinos, ou o treino atual quando fizer
+sentido).
+
+## Bug de `[hidden]` descoberto ao automatizar o fluxo
+
+Ao automatizar o fluxo principal (criar treino → adicionar exercício →
+registrar série → forçar erros) para gerar as evidências desta etapa, um
+exercício recém-criado sem séries mostrava o bloco "melhor série" vazio, e um
+treino recém-criado sem exercícios mostrava o painel de métricas zerado.
+Ambos os elementos tinham o atributo `hidden`, mas continuavam visíveis.
+
+Causa: `.destaque` e `.painel-metricas` (como várias outras classes de
+componente) declaram seu próprio `display` (`flex`/`grid`). Uma regra de
+`display` do autor da página tem prioridade sobre a regra padrão do navegador
+`[hidden] { display: none }` mesmo quando a especificidade é igual — a origem
+"author" sempre vence a origem "user-agent". O projeto já tinha três correções
+pontuais para esse mesmo problema (`.tela[hidden]`, `.meta[hidden]`,
+`.progresso-series[hidden]`), mas não em todo componente que usa `hidden`.
+
+Substituídas por uma única regra global, logo após o reset em
+`src/css/style.css`:
+
+```css
+[hidden] {
+  display: none !important;
+}
+```
+
+O `!important` aqui é deliberado e seguro: `hidden` é um atributo booleano de
+estado ("este elemento não deve aparecer"), não uma preferência visual que um
+componente deva poder sobrepor — então vale a pena garantir que ele sempre
+vença, em vez de depender de lembrar de escrever `<seletor>[hidden]` para cada
+classe nova que vier a usar `display`.

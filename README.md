@@ -93,6 +93,22 @@ Calculadas a partir dos registros existentes, sem novos campos no modelo de dado
 - barra de progresso das séries feitas na tela do exercício;
 - destaque da "melhor série" (maior peso registrado) na tela do exercício.
 
+### Interatividade e validação
+
+Toda a interface reage a eventos do usuário e é redesenhada dinamicamente com
+JavaScript puro, sem depender de recarregar a página:
+
+- validação de formulários com mensagens de erro específicas para cada campo
+  (nome do treino, dias da semana, nome do exercício, peso e repetições da
+  série, modalidade e metas de cardio);
+- navegação entre telas tratando explicitamente ids inexistentes (ex.: abrir
+  um treino que não existe mais volta para a lista, em vez de travar);
+- estados vazios ilustrados (nenhum treino, nenhum exercício, nenhuma série,
+  nenhuma sessão) em vez de telas em branco.
+
+> Instruções detalhadas de teste manual de cada funcionalidade interativa,
+> com capturas de tela, estão em `docs/etapa-04.md`.
+
 ### Evolução
 
 Em etapa posterior, a aplicação poderá apresentar a evolução de um determinado exercício ao longo do tempo, a partir dos registros já armazenados.
