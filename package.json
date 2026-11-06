@@ -1,0 +1,11 @@
+{
+  "name": "gymlog",
+  "private": true,
+  "description": "Ferramentas de teste do GymLog. A aplicação em si não tem dependências.",
+  "scripts": {
+    "test": "node tests/manual-check.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}

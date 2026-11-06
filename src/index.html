@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0d0f14">
   <title>GymLog — Seu diário de treinos</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -38,7 +39,7 @@
     </symbol>
   </svg>
 
-  <!-- Modelos de marcação clonados pelo app.js (cloneNode). A estrutura HTML dos
+  <!-- Modelos de marcação clonados pelo ui.js (cloneNode). A estrutura HTML dos
        elementos repetidos fica aqui, não dentro do JavaScript. -->
   <!-- Um dia do cronograma semanal. O conteúdo recebe os treinos daquele dia
        ou o bloco de descanso. -->
@@ -125,6 +126,13 @@
     </tr>
   </template>
 
+  <template id="tpl-carregando">
+    <div class="carregando" role="status">
+      <span class="carregando__spinner" aria-hidden="true"></span>
+      <p class="carregando__texto"></p>
+    </div>
+  </template>
+
   <template id="tpl-estado-vazio">
     <div class="estado-vazio">
       <svg class="estado-vazio__icone" aria-hidden="true"><use href="#icon-vazio"></use></svg>
@@ -132,7 +140,7 @@
     </div>
   </template>
 
-  <!-- Linha vazia genérica: o colspan e o texto são definidos pelo app.js. -->
+  <!-- Linha vazia genérica: o colspan e o texto são definidos pelo ui.js. -->
   <template id="tpl-linha-vazia">
     <tr>
       <td>
@@ -155,7 +163,7 @@
   </header>
 
   <main id="app" class="principal-app">
-    <!-- O conteúdo é renderizado dinamicamente pelo app.js, de acordo com a tela atual -->
+    <!-- O conteúdo é renderizado dinamicamente pelo ui.js, de acordo com a tela atual -->
 
     <section id="tela-treinos" class="tela" hidden>
       <div class="cabecalho-view">
@@ -167,7 +175,7 @@
           <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Novo Treino
         </button>
       </div>
-      <div id="lista-treinos" class="cronograma"></div>
+      <div id="lista-treinos" class="cronograma" aria-live="polite"></div>
     </section>
 
     <section id="tela-novo-treino" class="tela" hidden>
@@ -207,51 +215,54 @@
       <button id="btn-voltar-treinos" class="btn-link" type="button">
         <svg class="btn-link__icone" aria-hidden="true"><use href="#icon-voltar"></use></svg> Voltar
       </button>
-      <div class="cabecalho-view">
-        <div>
-          <span id="dia-treino" class="etiqueta-dia"></span>
-          <h2 id="titulo-treino"></h2>
-          <p id="descricao-treino" class="discreto"></p>
-        </div>
-      </div>
-
-      <div id="resumo-treino" class="painel-metricas" hidden>
-        <div class="painel-metricas__item">
-          <span class="painel-metricas__valor" id="metrica-exercicios"></span>
-          <span class="painel-metricas__rotulo">exercícios</span>
-        </div>
-        <div class="painel-metricas__item">
-          <span class="painel-metricas__valor" id="metrica-series"></span>
-          <span class="painel-metricas__rotulo">séries</span>
-        </div>
-        <div class="painel-metricas__item">
-          <span class="painel-metricas__valor" id="metrica-repeticoes"></span>
-          <span class="painel-metricas__rotulo">repetições</span>
-        </div>
-      </div>
-
-      <h3 class="subtitulo-secao">Exercícios</h3>
-      <div id="lista-exercicios" class="grade-cartoes"></div>
-      <button id="btn-novo-exercicio" class="btn btn--primario" type="button">
-        <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Adicionar exercício
-      </button>
-
-      <div id="wrapper-form-novo-exercicio" class="wrapper-formulario" hidden>
-        <form id="form-novo-exercicio" class="formulario" novalidate>
-          <div class="campo-formulario">
-            <label for="input-nome-exercicio">Nome do exercício</label>
-            <input id="input-nome-exercicio" name="nome" type="text" placeholder="Ex: Supino Reto" autocomplete="off">
+      <div id="estado-treino" aria-live="polite"></div>
+      <div id="conteudo-treino">
+        <div class="cabecalho-view">
+          <div>
+            <span id="dia-treino" class="etiqueta-dia"></span>
+            <h2 id="titulo-treino"></h2>
+            <p id="descricao-treino" class="discreto"></p>
           </div>
-          <p id="erro-novo-exercicio" class="erro-formulario" hidden></p>
-          <div class="acoes-formulario">
-            <button type="button" id="btn-cancelar-novo-exercicio" class="btn btn--secundario">Cancelar</button>
-            <button type="submit" class="btn btn--primario">Adicionar</button>
-          </div>
-        </form>
-      </div>
+        </div>
 
-      <h3 class="subtitulo-secao">Cardio</h3>
-      <div id="bloco-cardio-treino"></div>
+        <div id="resumo-treino" class="painel-metricas" hidden>
+          <div class="painel-metricas__item">
+            <span class="painel-metricas__valor" id="metrica-exercicios"></span>
+            <span class="painel-metricas__rotulo">exercícios</span>
+          </div>
+          <div class="painel-metricas__item">
+            <span class="painel-metricas__valor" id="metrica-series"></span>
+            <span class="painel-metricas__rotulo">séries</span>
+          </div>
+          <div class="painel-metricas__item">
+            <span class="painel-metricas__valor" id="metrica-repeticoes"></span>
+            <span class="painel-metricas__rotulo">repetições</span>
+          </div>
+        </div>
+
+        <h3 class="subtitulo-secao">Exercícios</h3>
+        <div id="lista-exercicios" class="grade-cartoes"></div>
+        <button id="btn-novo-exercicio" class="btn btn--primario" type="button">
+          <svg class="btn__icone" aria-hidden="true"><use href="#icon-mais"></use></svg> Adicionar exercício
+        </button>
+
+        <div id="wrapper-form-novo-exercicio" class="wrapper-formulario" hidden>
+          <form id="form-novo-exercicio" class="formulario" novalidate>
+            <div class="campo-formulario">
+              <label for="input-nome-exercicio">Nome do exercício</label>
+              <input id="input-nome-exercicio" name="nome" type="text" placeholder="Ex: Supino Reto" autocomplete="off">
+            </div>
+            <p id="erro-novo-exercicio" class="erro-formulario" hidden></p>
+            <div class="acoes-formulario">
+              <button type="button" id="btn-cancelar-novo-exercicio" class="btn btn--secundario">Cancelar</button>
+              <button type="submit" class="btn btn--primario">Adicionar</button>
+            </div>
+          </form>
+        </div>
+
+        <h3 class="subtitulo-secao">Cardio</h3>
+        <div id="bloco-cardio-treino"></div>
+      </div>
     </section>
 
     <section id="tela-exercicio" class="tela" hidden>
@@ -332,7 +343,7 @@
       <h3 class="subtitulo-secao">Meta acumulada</h3>
       <div class="metas">
         <!-- Anéis concêntricos: o externo é o tempo, o interno a distância.
-             O arco é desenhado com stroke-dasharray/dashoffset pelo app.js. -->
+             O arco é desenhado com stroke-dasharray/dashoffset pelo ui.js. -->
         <svg class="aneis" viewBox="0 0 120 120" role="img" aria-label="Progresso das metas de cardio">
           <g class="anel" data-anel="tempo">
             <circle class="anel__trilha" cx="60" cy="60" r="52"></circle>
@@ -429,6 +440,8 @@
     <p>GymLog — Projeto acadêmico de Tecnologia de Construção de Software I</p>
   </footer>
 
-  <script src="js/app.js"></script>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

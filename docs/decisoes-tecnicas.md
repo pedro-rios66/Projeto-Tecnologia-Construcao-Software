@@ -446,3 +446,80 @@ estado ("este elemento não deve aparecer"), não uma preferência visual que um
 componente deva poder sobrepor — então vale a pena garantir que ele sempre
 vença, em vez de depender de lembrar de escrever `<seletor>[hidden]` para cada
 classe nova que vier a usar `display`.
+
+---
+
+# Decisões técnicas — Etapa 05 (modularização e comunicação assíncrona)
+
+Detalhamento completo em `docs/etapa-05.md`.
+
+## Módulos ES em vez de um único `app.js`
+
+`app.js` foi dividido em `main.js`, `state.js`, `api.js`, `validation.js`,
+`calculations.js` e `ui.js`, seguindo o fluxo evento → validação → chamada assíncrona →
+estado → renderização. Não foi criada nenhuma camada genérica: são funções exportadas,
+sem classes de repositório nem injeção de dependência.
+
+As funções de `api.js` têm os nomes em inglês definidos para a etapa (`fetchWorkouts`,
+`addSet`); o restante do código e os campos JSON mantêm o português do projeto
+(`treino`, `exercicios`, `peso`), para não renomear o modelo de dados sem necessidade.
+
+## Servidor simulado em Python, só com a biblioteca padrão
+
+O aluno domina a linguagem, não há dependências a instalar e o front-end não depende da
+linguagem do servidor, pois se comunica apenas por HTTP e JSON. Node puro, `json-server`
+e uma API pública foram avaliados (ver `docs/etapa-05.md`, seção 3).
+
+O servidor pode evoluir em etapas futuras (por exemplo, para um framework ou um banco de
+dados) sem mudar o front-end, desde que o contrato da API seja mantido.
+
+## Fonte de verdade no servidor e sem LocalStorage
+
+O README citava o LocalStorage, mas o código nunca o usou. Com o servidor como fonte de
+verdade, `state.js` guarda só uma cópia para a renderização, e o LocalStorage segue fora
+do projeto: uma segunda cópia persistente poderia divergir do servidor.
+
+## API maior que a lista mínima
+
+A etapa pede cinco rotas de consulta e criação, mas o aplicativo também remove itens,
+marca séries e sessões como feitas e tem cardio. Manter essas operações só no navegador
+faria os dados voltarem ao estado anterior na consulta seguinte. Foram adicionadas sete
+rotas (`PATCH`, `PUT`, `POST` e `DELETE`) para não regredir o que já funcionava.
+
+## Toda escrita devolve o treino inteiro
+
+Em vez de devolver só o item criado, cada escrita dentro de um treino responde com o
+treino atualizado. Assim o front-end não precisa de uma função de atualização por tipo de
+item: `salvarTreino(resposta)` e uma nova renderização atendem a todos os casos.
+
+## Numeração das séries no servidor
+
+Até a Etapa 04, o número da série era derivado da posição na lista. Esta etapa pede
+numeração automática no servidor: o campo `numero` é definido na criação e recalculado na
+remoção, o que mantém o comportamento de não deixar buracos na sequência.
+
+## Roteamento com `match`/`case`
+
+O caminho é dividido em partes e comparado por padrões, como
+`("POST", ["exercises", id_exercicio, "sets"])`. É simples de ler, dispensa regex e um
+mini-framework de rotas, e é o motivo de o Python mínimo ser o 3.10.
+
+## Um único `try/catch/finally` por tipo de operação
+
+`registrarFormulario()` concentra o fluxo dos cinco formulários, e `executarAcao()` o das
+ações de um clique. Cada formulário declara só o que é específico (validar, enviar, o que
+fazer ao salvar). O `finally` é o único ponto em que o estado de envio é desligado.
+
+## Rascunho de cardio apenas no navegador
+
+Antes, "Adicionar cardio" criava um cardio vazio no estado, descartado ao cancelar. Esse
+rascunho continua existindo só em `state.js`: o servidor recebe o cardio quando a meta é
+salva e nunca guarda um cardio inválido.
+
+## Correções encontradas ao testar
+
+- **Fila de conexões:** o teste de gravações simultâneas recebeu `ECONNREFUSED`, pois a fila
+  padrão do `socketserver` tem 5 posições. `request_queue_size` passou para 64.
+- **Bloco mais largo que a tela:** os estados de carregamento e erro herdavam a largura das
+  sete colunas do cronograma e ficavam cortados. A regra
+  `.cronograma:not(:has(.dia)) { display: block; }` resolve os dois e o estado vazio.

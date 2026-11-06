@@ -1,0 +1,210 @@
+{
+  "proximoId": 29,
+  "treinos": [
+    {
+      "id": 1,
+      "nome": "Treino A",
+      "descricao": "Peito + Tríceps",
+      "dias": [
+        0,
+        4
+      ],
+      "exercicios": [
+        {
+          "id": 2,
+          "nome": "Supino Reto",
+          "series": [
+            {
+              "id": 3,
+              "numero": 1,
+              "peso": 60,
+              "repeticoes": 10,
+              "feita": false
+            },
+            {
+              "id": 4,
+              "numero": 2,
+              "peso": 60,
+              "repeticoes": 10,
+              "feita": false
+            },
+            {
+              "id": 5,
+              "numero": 3,
+              "peso": 55,
+              "repeticoes": 12,
+              "feita": false
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "nome": "Supino Inclinado",
+          "series": [
+            {
+              "id": 7,
+              "numero": 1,
+              "peso": 50,
+              "repeticoes": 10,
+              "feita": false
+            },
+            {
+              "id": 8,
+              "numero": 2,
+              "peso": 50,
+              "repeticoes": 10,
+              "feita": false
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "nome": "Tríceps Pulley",
+          "series": []
+        }
+      ],
+      "cardio": {
+        "modalidade": "Esteira",
+        "metaMinutos": 30,
+        "metaKm": 5,
+        "sessoes": [
+          {
+            "id": 10,
+            "minutos": 12,
+            "km": 1.8,
+            "feita": true
+          },
+          {
+            "id": 11,
+            "minutos": 12,
+            "km": 1.6,
+            "feita": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "nome": "Treino B",
+      "descricao": "Costas + Bíceps",
+      "dias": [
+        1,
+        5
+      ],
+      "exercicios": [
+        {
+          "id": 13,
+          "nome": "Puxada Alta",
+          "series": [
+            {
+              "id": 14,
+              "numero": 1,
+              "peso": 45,
+              "repeticoes": 12,
+              "feita": false
+            },
+            {
+              "id": 15,
+              "numero": 2,
+              "peso": 45,
+              "repeticoes": 12,
+              "feita": false
+            }
+          ]
+        },
+        {
+          "id": 16,
+          "nome": "Remada",
+          "series": []
+        },
+        {
+          "id": 17,
+          "nome": "Rosca Direta",
+          "series": []
+        }
+      ],
+      "cardio": {
+        "modalidade": "Bicicleta",
+        "metaMinutos": 40,
+        "metaKm": 12,
+        "sessoes": [
+          {
+            "id": 18,
+            "minutos": 40,
+            "km": 12,
+            "feita": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "nome": "Treino C",
+      "descricao": "Pernas",
+      "dias": [
+        2,
+        6
+      ],
+      "exercicios": [
+        {
+          "id": 20,
+          "nome": "Agachamento Livre",
+          "series": [
+            {
+              "id": 21,
+              "numero": 1,
+              "peso": 80,
+              "repeticoes": 8,
+              "feita": false
+            },
+            {
+              "id": 22,
+              "numero": 2,
+              "peso": 80,
+              "repeticoes": 8,
+              "feita": false
+            },
+            {
+              "id": 23,
+              "numero": 3,
+              "peso": 70,
+              "repeticoes": 10,
+              "feita": false
+            }
+          ]
+        },
+        {
+          "id": 24,
+          "nome": "Leg Press",
+          "series": [
+            {
+              "id": 25,
+              "numero": 1,
+              "peso": 120,
+              "repeticoes": 12,
+              "feita": false
+            },
+            {
+              "id": 26,
+              "numero": 2,
+              "peso": 120,
+              "repeticoes": 10,
+              "feita": false
+            }
+          ]
+        },
+        {
+          "id": 27,
+          "nome": "Cadeira Extensora",
+          "series": []
+        },
+        {
+          "id": 28,
+          "nome": "Panturrilha em Pé",
+          "series": []
+        }
+      ],
+      "cardio": null
+    }
+  ]
+}

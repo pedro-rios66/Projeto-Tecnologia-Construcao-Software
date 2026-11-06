@@ -6,7 +6,7 @@ O **GymLog** é uma aplicação Web voltada para praticantes de musculação que
 
 Este repositório faz parte da disciplina **Tecnologia de Construção de Software I — Projeto Integrador** e é desenvolvido de forma **incremental** ao longo do semestre, sempre sobre o mesmo repositório Git. Cada etapa da disciplina corresponde a uma versão identificável do projeto, marcada por uma tag Git.
 
-A primeira versão é construída com **HTML, CSS e JavaScript puro**, sem frameworks, sem backend e sem dependências externas. Tecnologias adicionais poderão ser incorporadas conforme os conteúdos da disciplina forem apresentados, mas não fazem parte do estado atual do projeto.
+O front-end é construído com **HTML, CSS e JavaScript puro**, sem frameworks nem bibliotecas. Desde a Etapa 05, os dados ficam em um **servidor simulado em Python**, feito só com a biblioteca padrão, com o qual o navegador se comunica por HTTP e JSON.
 
 ---
 
@@ -109,6 +109,19 @@ JavaScript puro, sem depender de recarregar a página:
 > Instruções detalhadas de teste manual de cada funcionalidade interativa,
 > com capturas de tela, estão em `docs/etapa-04.md`.
 
+### Comunicação com o servidor
+
+Todos os dados são lidos e gravados de forma assíncrona no servidor simulado:
+
+- indicador de carregamento nas consultas e botão "Salvando..." nos envios, que
+  também impede o envio duplicado;
+- confirmação curta ao concluir uma operação;
+- mensagem de erro com "Tentar novamente" nas consultas;
+- mensagem de erro no próprio formulário nos envios, sem perder o que foi digitado;
+- tratamento de erro do servidor, falha de conexão e tempo limite de 8 segundos.
+
+> Detalhes em `docs/etapa-05.md`.
+
 ### Evolução
 
 Em etapa posterior, a aplicação poderá apresentar a evolução de um determinado exercício ao longo do tempo, a partir dos registros já armazenados.
@@ -125,108 +138,98 @@ Versão atual do projeto:
 |---|---|
 | HTML5 | estrutura da interface |
 | CSS3 | estilização e layout responsivo (mobile first) |
-| JavaScript (ES6+) | lógica da aplicação e interações |
+| JavaScript (ES6+) com ES Modules | lógica da aplicação, dividida em módulos |
+| Fetch API, Promises e `async`/`await` | comunicação assíncrona com o servidor |
 | `<template>` HTML | marcação dos elementos repetidos, clonada pelo JS (sem HTML em strings) |
 | SVG inline | ícones (`<symbol>` + `<use>`), sem imagens externas nem biblioteca |
-| LocalStorage | persistência dos dados no navegador |
+| Python 3.10+ (biblioteca padrão) | apenas o servidor simulado (`server/server.py`) |
+| Node.js e Playwright | apenas os testes automatizados; a aplicação não depende deles |
 | Git / GitHub | versionamento e hospedagem do repositório |
 
-Não há framework, biblioteca externa, gerenciador de pacotes ou etapa de build.
+O front-end não tem framework, biblioteca externa nem etapa de build.
 
 ### Tecnologias consideradas para evolução futura
 
 Os itens abaixo **não estão implementados** e são listados apenas como possibilidades de evolução, a serem avaliadas conforme os conteúdos da disciplina avançarem:
 
-- Node.js e Express;
+- framework web no servidor;
 - banco de dados relacional (por exemplo, PostgreSQL);
-- API REST;
 - React ou outra biblioteca de interface;
-- autenticação de usuários;
-- testes automatizados.
+- autenticação de usuários.
 
-A adoção de qualquer uma dessas tecnologias será justificada em `docs/arquitetura.md` no momento em que ocorrer.
+A adoção de qualquer uma dessas tecnologias será justificada em `docs/decisoes-tecnicas.md` no momento em que ocorrer.
 
 ---
 
 ## Estrutura do projeto
 
-A estrutura abaixo representa a **organização planejada** do repositório:
-
 ```
-GymLog/
-│
+.
 ├── README.md
-│
+├── package.json              # só para os testes (Playwright)
 ├── docs/
-│   ├── proposta.md
-│   ├── arquitetura.md
-│   └── evidencias.md
-│
+│   ├── decisoes-tecnicas.md
+│   ├── etapa-03.md
+│   ├── etapa-04.md
+│   ├── etapa-05.md
+│   └── evidencias/
+├── server/
+│   ├── server.py             # servidor simulado (arquivos estáticos + API)
+│   └── db.json               # dados persistidos
 ├── src/
 │   ├── index.html
 │   ├── css/
 │   │   └── style.css
-│   │
 │   └── js/
-│       ├── app.js
-│       ├── storage.js
-│       ├── ui.js
-│       └── utils.js
-│
+│       ├── main.js           # ponto de entrada e registro dos eventos
+│       ├── state.js          # estado da interface
+│       ├── api.js            # todas as chamadas fetch
+│       ├── validation.js     # validações (funções puras)
+│       ├── calculations.js   # cálculos (funções puras)
+│       └── ui.js             # renderização e estados da interface
 └── tests/
+    └── manual-check.js       # testes de ponta a ponta e evidências
 ```
 
-**Observação importante:** nem todos os itens acima existem desde a primeira etapa. A estrutura é criada de forma incremental, na medida em que cada parte passa a ser necessária. Em particular:
-
-- os módulos em `src/js/` são separados conforme a lógica cresce; nas primeiras etapas, parte do código pode estar concentrada em um único arquivo;
-- `src/js/storage.js` só passa a fazer sentido a partir da etapa de persistência;
-- a pasta `tests/` é criada quando testes forem efetivamente introduzidos na disciplina;
-- os arquivos em `docs/` são preenchidos ao longo do semestre.
-
-Sempre que a estrutura real divergir do planejado, este README é atualizado.
-
-### Responsabilidade prevista para cada módulo
-
-| Arquivo | Responsabilidade prevista |
-|---|---|
-| `app.js` | inicialização e coordenação geral da aplicação |
-| `storage.js` | leitura e gravação dos dados na persistência |
-| `ui.js` | manipulação do DOM e renderização da interface |
-| `utils.js` | funções auxiliares e reutilizáveis |
+As responsabilidades e dependências de cada módulo estão na seção 4 de `docs/etapa-05.md`.
 
 ---
 
 ## Como executar
 
-O projeto não possui dependências nem processo de build. Basta ter o repositório em máquina local e um navegador.
+**Pré-requisitos:** Python 3.10 ou superior e um navegador atual. A aplicação não tem nada a instalar.
 
 **1. Clonar o repositório**
 
 ```bash
-git clone https://github.com/<usuario>/GymLog.git
-cd GymLog
+git clone https://github.com/pedro-rios66/Projeto-Tecnologia-Construcao-Software.git
+cd Projeto-Tecnologia-Construcao-Software
 ```
 
-**2. Abrir a aplicação**
-
-Opção A — abrir diretamente o arquivo:
-
-```
-src/index.html
-```
-
-Opção B — servir os arquivos por um servidor local (recomendado, pois evita restrições do navegador ao carregar arquivos via `file://`):
+**2. Iniciar o servidor**
 
 ```bash
-cd src
-python3 -m http.server 8000
+python server/server.py   # no Windows, também: py server/server.py
 ```
 
-Depois, acessar `http://localhost:8000` no navegador.
+**3. Acessar** `http://localhost:3000`
 
-Usuários de VS Code podem utilizar a extensão **Live Server** como alternativa.
+Abrir o `index.html` diretamente não funciona mais: módulos ES e `fetch` exigem um servidor HTTP.
 
-**3. Consultar uma etapa específica**
+| Variável de ambiente | Padrão | Função |
+|---|---|---|
+| `PORT` | `3000` | porta do servidor |
+| `DB_PATH` | `server/db.json` | arquivo de dados |
+| `MOCK_DELAY_MS` | `600` | atraso artificial nas rotas `/api`, para os estados de carregamento ficarem visíveis |
+
+**4. Rodar os testes** (exige Node.js)
+
+```bash
+npm install
+npm test
+```
+
+**5. Consultar uma etapa específica**
 
 ```bash
 git checkout etapa-01
@@ -250,19 +253,11 @@ Esta seção é atualizada conforme cada funcionalidade é implementada, para re
 
 ## Persistência dos dados
 
-A persistência inicial é feita com **LocalStorage**, recurso do próprio navegador.
+Os dados ficam em `server/db.json`, lido e gravado pelo servidor simulado a cada operação. O navegador guarda apenas uma cópia em memória para desenhar as telas, e o projeto não usa armazenamento local do navegador.
 
-Características dessa abordagem:
-
-- os dados ficam armazenados no navegador do dispositivo utilizado;
-- não há servidor nem banco de dados;
-- os dados permanecem entre sessões, desde que o armazenamento local do navegador não seja limpo;
-- os dados não são compartilhados entre navegadores ou dispositivos diferentes;
-- o armazenamento aceita apenas texto, de modo que os dados são serializados em JSON na gravação e desserializados na leitura.
-
-A escolha do LocalStorage é adequada ao escopo inicial: permite tratar persistência, serialização e validação de dados sem introduzir backend antes que o assunto seja abordado na disciplina.
-
-Antes da etapa de persistência, os dados existem apenas em memória e são perdidos ao recarregar a página. Essa limitação é intencional e resolvida no momento previsto do cronograma.
+- os dados permanecem entre recarregamentos e reinícios do servidor;
+- o arquivo é versionado com os treinos de exemplo, então usar a aplicação faz com que ele apareça como modificado no Git;
+- para restaurar os dados de exemplo: `git restore server/db.json`.
 
 ---
 
@@ -277,14 +272,14 @@ Planejamento inicial:
 | Etapa 01 | estrutura inicial do repositório e interface |
 | Etapa 02 | interações com JavaScript |
 | Etapa 03 | validação e organização do código |
-| Etapa 04 | persistência com LocalStorage |
-| Etapa 05 | histórico de treinos |
+| Etapa 04 | interatividade com JavaScript |
+| Etapa 05 | modularização e comunicação assíncrona |
 | Etapa 06 | evolução e métricas |
 | Etapa 07+ | possível backend/API |
 | Etapa 10 | aplicação consolidada |
 | Final | versão final |
 
-> Esse cronograma é **planejamento inicial**, não um compromisso fechado. A ordem e o conteúdo das etapas podem ser alterados conforme os conteúdos apresentados na disciplina e as decisões técnicas tomadas durante o desenvolvimento. Alterações relevantes em relação a este planejamento são registradas em `docs/arquitetura.md`.
+> Esse cronograma é **planejamento inicial**, não um compromisso fechado. A ordem e o conteúdo das etapas podem ser alterados conforme os conteúdos apresentados na disciplina e as decisões técnicas tomadas durante o desenvolvimento. A Etapa 05, por exemplo, tratou de modularização e comunicação assíncrona. Alterações relevantes são registradas em `docs/decisoes-tecnicas.md`.
 
 ---
 
@@ -331,54 +326,31 @@ A documentação complementar fica na pasta `docs/`:
 
 | Arquivo | Conteúdo |
 |---|---|
-| `docs/proposta.md` | proposta do projeto, problema e escopo |
-| `docs/arquitetura.md` | decisões técnicas e organização da aplicação |
-| `docs/evidencias.md` | registro da evolução, com evidências de cada etapa |
-
-### Decisões de engenharia de software
-
-As principais decisões técnicas do projeto são registradas em `docs/arquitetura.md`, com o contexto e a justificativa de cada uma. As decisões documentadas incluem, conforme forem sendo tomadas:
-
-- organização do código e separação de responsabilidades;
-- arquitetura da aplicação;
-- estratégia de persistência;
-- escolha de tecnologias;
-- comunicação entre componentes/módulos;
-- validação de dados de entrada;
-- tratamento de erros;
-- estratégia de testes.
-
-Nenhuma dessas decisões é registrada antecipadamente: cada uma é documentada no momento em que é efetivamente tomada, junto com as alternativas consideradas.
+| `docs/decisoes-tecnicas.md` | decisões técnicas de cada etapa, com contexto e justificativa |
+| `docs/etapa-03.md` | interface responsiva |
+| `docs/etapa-04.md` | interatividade com JavaScript |
+| `docs/etapa-05.md` | modularização e comunicação assíncrona |
+| `docs/evidencias/` | capturas de tela de cada etapa |
 
 ---
 
 ## Limitações conhecidas
 
-A versão inicial tem limitações que decorrem diretamente do escopo escolhido:
-
-- **ausência de backend** — toda a aplicação é executada no navegador;
-- **persistência limitada ao navegador** — os dados ficam no LocalStorage do dispositivo;
-- **dados vinculados ao navegador/dispositivo** — abrir a aplicação em outro navegador ou computador significa começar do zero;
-- **ausência de sincronização entre dispositivos**;
+- **servidor apenas local e de desenvolvimento** — atende só em `127.0.0.1`;
+- **armazenamento simples** — `db.json` é regravado por inteiro a cada escrita;
 - **ausência de autenticação** — não há usuários, contas ou controle de acesso;
-- **sem backup automático** — limpar os dados do navegador remove os registros.
+- **sem sincronização entre abas ou dispositivos** — uma aba só vê as mudanças de outra na consulta seguinte;
+- **sem backup automático** dos dados.
 
-Essas limitações **fazem parte do escopo inicial**, e não são falhas de implementação. Elas permitem concentrar as primeiras etapas nos fundamentos (estrutura, lógica, validação e organização do código) antes de introduzir infraestrutura mais complexa. Boa parte delas pode ser tratada em etapas futuras, caso o projeto evolua para uma arquitetura com backend.
+Essas limitações fazem parte do escopo atual, e não são falhas de implementação. A lista completa está na seção 11 de `docs/etapa-05.md`.
 
 ---
 
 ## Próximos passos
 
-Ações previstas para o curto prazo:
-
-- concluir a estrutura da interface e a navegação básica;
-- implementar as interações de criação de treino e cadastro de exercícios;
-- implementar o registro de séries com peso e repetições;
-- introduzir validação das entradas e tratamento de erros;
-- implementar a persistência com LocalStorage;
 - construir a visualização do histórico;
 - avaliar a apresentação da evolução por exercício;
-- manter `docs/arquitetura.md` e este README atualizados a cada etapa.
+- manter `docs/decisoes-tecnicas.md` e este README atualizados a cada etapa.
 
 ---
 

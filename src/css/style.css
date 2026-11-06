@@ -232,7 +232,7 @@ h1, h2, h3 {
 /* Os sete dias ficam sempre na mesma linha. Cada coluna tem largura mínima:
    quando não cabem, o cronograma rola na horizontal em vez de quebrar linha. */
 .cronograma {
-  position: relative; /* referência para o app.js rolar até o dia de hoje */
+  position: relative; /* referência para o ui.js rolar até o dia de hoje */
   display: grid;
   grid-template-columns: repeat(7, minmax(172px, 1fr));
   gap: var(--espaco-2);
@@ -645,6 +645,78 @@ h1, h2, h3 {
   padding: var(--espaco-4) var(--espaco-3);
 }
 
+.estado-vazio--erro {
+  border-color: rgba(255, 122, 122, 0.3);
+  background: var(--cor-perigo-fundo);
+  color: var(--cor-perigo);
+}
+
+.estado-vazio--erro .estado-vazio__icone {
+  background: var(--cor-perigo-fundo);
+  color: var(--cor-perigo);
+}
+
+/* Sem os cartões dos dias, o cronograma não pode ser mais largo que a tela: o
+   carregamento e os estados vazio e de erro ficariam cortados e fora de centro. */
+.cronograma:not(:has(.dia)) {
+  display: block;
+}
+
+/* ---------- Carregamento ---------- */
+
+.carregando {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5) var(--espaco-3);
+  color: var(--cor-texto-discreto);
+}
+
+.carregando__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--cor-borda-clara);
+  border-top-color: var(--cor-primaria);
+  border-radius: 50%;
+  animation: girar 0.9s linear infinite;
+}
+
+.carregando__texto {
+  margin: 0;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Confirmação curta (toast) ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--espaco-4);
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none; /* não bloqueia os botões que estiverem por baixo */
+  width: max-content;
+  max-width: calc(100% - 2 * var(--espaco-3));
+  padding: 10px var(--espaco-3);
+  border: 1px solid var(--cor-sucesso);
+  border-radius: var(--raio-pequeno);
+  background-color: var(--cor-superficie-alt);
+  color: var(--cor-sucesso);
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--sombra-flutuante);
+}
+
+.toast--erro {
+  border-color: var(--cor-perigo);
+  color: var(--cor-perigo);
+}
+
 .estado-vazio__icone {
   width: 56px;
   height: 56px;
@@ -676,6 +748,11 @@ h1, h2, h3 {
   align-items: center;
   gap: var(--espaco-1);
   transition: transform 0.12s ease, filter 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn__icone {
