@@ -181,7 +181,7 @@ h1, h2, h3 {
 
 .principal-app {
   max-width: var(--largura-maxima);
-  margin: 0.80;
+  margin: 0 auto;
   padding: var(--espaco-3);
 }
 
