@@ -523,3 +523,61 @@ salva e nunca guarda um cardio inválido.
 - **Bloco mais largo que a tela:** os estados de carregamento e erro herdavam a largura das
   sete colunas do cronograma e ficavam cortados. A regra
   `.cronograma:not(:has(.dia)) { display: block; }` resolve os dois e o estado vazio.
+
+---
+
+# Decisões técnicas — Etapa 06 (API REST da aplicação)
+
+Detalhamento completo em `docs/etapa-06.md`; referência dos endpoints em `docs/api/README.md`.
+
+## Python mantido como tecnologia do servidor
+
+O enunciado sugere Node.js/Express, mas aceita tecnologia equivalente. A API já existia
+em Python desde a Etapa 05, e trocar de linguagem só mudaria a ferramenta, não o
+contrato HTTP. O front-end não precisou de nenhuma alteração.
+
+## Servidor dividido em módulos, com tabela de rotas
+
+`server.py` cuidava de tudo. Com o CRUD completo e os novos códigos HTTP, ele foi
+dividido em `server.py` (HTTP), `rotas.py` (rotas), `validacao.py` (regras) e
+`erros.py` (erro padrão). O `match`/`case` da Etapa 05 deu lugar a uma tabela
+`ROTAS`, que serve de índice da API e permite responder `405` com o cabeçalho
+`Allow`: com o `match`, uma rota existente chamada com o método errado caía no 404.
+
+## PUT para alterar o treino
+
+O `PUT /workouts/{id}` recebe o mesmo corpo da criação e reaproveita
+`validar_treino()`. Um `PATCH` parcial exigiria regras para campos ausentes, sem
+ganho para o uso atual. Exercícios e cardio ficam fora do corpo, pois têm rotas próprias.
+
+## Exclusão responde 204; sub-recursos continuam respondendo o treino
+
+Excluir o treino não deixa nada a devolver, então a resposta é `204` sem corpo. Já
+remover um exercício, uma série ou uma sessão altera o treino, que continua existindo,
+e por isso a resposta segue sendo `200` com o treino atualizado, como a interface espera.
+
+## Content-Type obrigatório e limite de tamanho
+
+Sem `Content-Type: application/json`, o servidor responde `415` em vez de tentar
+interpretar o corpo. Corpos acima de 100.000 bytes recebem `413`. O corpo é lido
+antes de qualquer resposta de erro, porque no Windows deixá-lo sem ler pode derrubar
+a conexão antes que o cliente receba o erro.
+
+## Mensagem própria para corpo fora de UTF-8
+
+Ao gerar os exemplos da documentação, o `curl` do Windows enviou "Abdômen" na
+codificação do sistema, e a API respondia apenas "JSON inválido". O caso ganhou a
+mensagem "O corpo da requisição deve estar codificado em UTF-8.", e os exemplos usam
+`--data-binary @arquivo.json`, que envia os bytes do arquivo sem conversão.
+
+## Coleção do Postman verificada pelos testes
+
+A coleção tem scripts de teste em cada requisição. Rodá-la com o Newman exigiria uma
+dependência a mais, então `tests/api-check.js` a executa com um `pm` mínimo, que
+cobre só o que os scripts usam. Uma coleção quebrada reprova o `npm test`.
+
+## Evidências regravadas só sob demanda
+
+Rodar os testes regravava as capturas da Etapa 05 e mudava evidências já entregues,
+por exemplo o destaque do dia atual. A captura passou a depender de
+`npm run evidencias`.

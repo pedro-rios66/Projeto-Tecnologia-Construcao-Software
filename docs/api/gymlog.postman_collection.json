@@ -1,0 +1,811 @@
+{
+  "info": {
+    "name": "GymLog API",
+    "description": "API REST do GymLog (Etapa 06). Inicie o servidor com `python server/server.py` e execute as pastas em ordem: as requisições de criação guardam os ids usados nas seguintes. Documentação: docs/api.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "idTreino",
+      "value": ""
+    },
+    {
+      "key": "idExercicio",
+      "value": ""
+    },
+    {
+      "key": "idSerie",
+      "value": ""
+    },
+    {
+      "key": "idSessao",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Treinos (recurso principal)",
+      "item": [
+        {
+          "name": "Listar treinos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devolve uma lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar treino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Cabeçalho Location aponta para o treino criado\", () =>",
+                  "  pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/workouts/\" + pm.response.json().id));",
+                  "const treino = pm.response.json();",
+                  "pm.collectionVariables.set(\"idTreino\", treino.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Treino D\",\n  \"descricao\": \"Ombros + Abdômen\",\n  \"dias\": [\n    2,\n    5\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar treino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"É o treino criado\", () => pm.expect(pm.response.json().nome).to.eql(\"Treino D\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar treino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Dados alterados\", () => pm.expect(pm.response.json().dias).to.eql([2]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Treino D\",\n  \"descricao\": \"Ombros\",\n  \"dias\": [\n    2\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Exercícios e séries",
+      "item": [
+        {
+          "name": "Adicionar exercício",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const treino = pm.response.json();",
+                  "pm.collectionVariables.set(\"idExercicio\", treino.exercicios[treino.exercicios.length - 1].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Desenvolvimento com Halteres\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/exercises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "exercises"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar série",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const exercicio = pm.response.json().exercicios.find((e) => e.id == pm.collectionVariables.get(\"idExercicio\"));",
+                  "pm.test(\"Série numerada pelo servidor\", () => pm.expect(exercicio.series[0].numero).to.eql(1));",
+                  "pm.collectionVariables.set(\"idSerie\", exercicio.series[exercicio.series.length - 1].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peso\": 14,\n  \"repeticoes\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/exercises/{{idExercicio}}/sets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "exercises",
+                "{{idExercicio}}",
+                "sets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar série como feita",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feita\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/exercises/{{idExercicio}}/sets/{{idSerie}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "exercises",
+                "{{idExercicio}}",
+                "sets",
+                "{{idSerie}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover série",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/exercises/{{idExercicio}}/sets/{{idSerie}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "exercises",
+                "{{idExercicio}}",
+                "sets",
+                "{{idSerie}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover exercício",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/exercises/{{idExercicio}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "exercises",
+                "{{idExercicio}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Cardio",
+      "item": [
+        {
+          "name": "Definir meta de cardio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modalidade\": \"Bicicleta\",\n  \"metaMinutos\": 30,\n  \"metaKm\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/cardio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "cardio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar sessão",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const treino = pm.response.json();",
+                  "pm.collectionVariables.set(\"idSessao\", treino.cardio.sessoes[treino.cardio.sessoes.length - 1].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minutos\": 15,\n  \"km\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/cardio/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "cardio",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar sessão como feita",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feita\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/cardio/sessions/{{idSessao}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "cardio",
+                "sessions",
+                "{{idSessao}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover sessão",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}/cardio/sessions/{{idSessao}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}",
+                "cardio",
+                "sessions",
+                "{{idSessao}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Erros",
+      "item": [
+        {
+          "name": "400 — dado inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no formato padrão { error }\", () => {",
+                  "  const corpo = pm.response.json();",
+                  "  pm.expect(Object.keys(corpo)).to.eql([\"error\"]);",
+                  "  pm.expect(corpo.error).to.be.a(\"string\");",
+                  "});",
+                  "pm.test(\"Mensagem da validação\", () => pm.expect(pm.response.json().error).to.eql(\"O nome do treino não pode estar vazio.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"\",\n  \"dias\": [\n    0\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "400 — JSON malformado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no formato padrão { error }\", () => {",
+                  "  const corpo = pm.response.json();",
+                  "  pm.expect(Object.keys(corpo)).to.eql([\"error\"]);",
+                  "  pm.expect(corpo.error).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome\": \"Treino"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "404 — treino inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erro no formato padrão { error }\", () => {",
+                  "  const corpo = pm.response.json();",
+                  "  pm.expect(Object.keys(corpo)).to.eql([\"error\"]);",
+                  "  pm.expect(corpo.error).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "99999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "404 — rota inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erro no formato padrão { error }\", () => {",
+                  "  const corpo = pm.response.json();",
+                  "  pm.expect(Object.keys(corpo)).to.eql([\"error\"]);",
+                  "  pm.expect(corpo.error).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inexistente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inexistente"
+              ]
+            }
+          }
+        },
+        {
+          "name": "405 — método não aceito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 405\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"Erro no formato padrão { error }\", () => {",
+                  "  const corpo = pm.response.json();",
+                  "  pm.expect(Object.keys(corpo)).to.eql([\"error\"]);",
+                  "  pm.expect(corpo.error).to.be.a(\"string\");",
+                  "});",
+                  "pm.test(\"Cabeçalho Allow lista os métodos aceitos\", () => pm.expect(pm.response.headers.get(\"Allow\")).to.eql(\"GET, POST\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "415 — corpo sem JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 415\", () => pm.response.to.have.status(415));",
+                  "pm.test(\"Erro no formato padrão { error }\", () => {",
+                  "  const corpo = pm.response.json();",
+                  "  pm.expect(Object.keys(corpo)).to.eql([\"error\"]);",
+                  "  pm.expect(corpo.error).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "nome=Treino"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Exclusão",
+      "item": [
+        {
+          "name": "Excluir treino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Resposta sem corpo\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar treino excluído",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Erro no formato padrão { error }\", () => {",
+                  "  const corpo = pm.response.json();",
+                  "  pm.expect(Object.keys(corpo)).to.eql([\"error\"]);",
+                  "  pm.expect(corpo.error).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{idTreino}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workouts",
+                "{{idTreino}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

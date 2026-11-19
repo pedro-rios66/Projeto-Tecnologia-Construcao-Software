@@ -1,55 +1,29 @@
-// Testes de ponta a ponta do GymLog: sobe o servidor Python com uma cópia temporária
-// do db.json, exercita a interface pelo navegador e captura as evidências da Etapa 05.
+// Testes de ponta a ponta da interface do GymLog: exercita a aplicação pelo navegador e
+// captura as evidências da Etapa 05. Os testes da API ficam em tests/api-check.js.
 // Execução: npm test
 
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
 const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
 const { after, before, test } = require("node:test");
 const { chromium } = require("playwright");
+const { RAIZ, iniciarServidor } = require("./servidor-de-teste");
 
-const RAIZ = path.join(__dirname, "..");
 const EVIDENCIAS = path.join(RAIZ, "docs", "evidencias", "etapa-05");
-const PORTA = "3999"; // diferente da porta padrão, para não conversar com um servidor já aberto
-const URL_BASE = `http://127.0.0.1:${PORTA}`;
-
 let servidor;
 let navegador;
-let pastaTemporaria;
-
-async function aguardarServidor() {
-  for (let tentativa = 0; tentativa < 50; tentativa++) {
-    assert.equal(servidor.exitCode, null, "o servidor Python encerrou ao iniciar");
-    const respondeu = await fetch(`${URL_BASE}/api/workouts`).then((r) => r.ok, () => false);
-    if (respondeu) return;
-    await new Promise((resolver) => setTimeout(resolver, 200));
-  }
-  assert.fail("o servidor Python não respondeu a tempo");
-}
+let URL_BASE;
 
 before(async () => {
-  pastaTemporaria = fs.mkdtempSync(path.join(os.tmpdir(), "gymlog-"));
-  const dbTemporario = path.join(pastaTemporaria, "db.json");
-  fs.copyFileSync(path.join(RAIZ, "server", "db.json"), dbTemporario);
-  fs.mkdirSync(EVIDENCIAS, { recursive: true });
-
-  const python = process.platform === "win32" ? "python" : "python3";
-  servidor = spawn(python, [path.join(RAIZ, "server", "server.py")], {
-    env: { ...process.env, PORT: PORTA, DB_PATH: dbTemporario, MOCK_DELAY_MS: "20" },
-    stdio: "ignore",
-  });
-
-  await aguardarServidor();
+  servidor = await iniciarServidor(3999);
+  URL_BASE = servidor.url;
   // No Windows usa o Edge já instalado, sem precisar baixar um navegador.
   navegador = await chromium.launch(process.platform === "win32" ? { channel: "msedge" } : {});
 });
 
 after(async () => {
   await navegador?.close();
-  servidor?.kill();
-  fs.rmSync(pastaTemporaria, { recursive: true, force: true });
+  servidor?.encerrar();
 });
 
 /* --- Auxiliares --- */
@@ -75,8 +49,12 @@ function testarPagina(nome, corpo, { falhasEsperadas = false } = {}) {
   });
 }
 
-// Espera o fade de entrada das telas (0,28 s) para a captura não sair escurecida.
+// As capturas só são regravadas com "npm run evidencias" (argumento --evidencias), para
+// os testes comuns não alterarem as evidências já entregues. A espera é o fade de
+// entrada das telas (0,28 s), para a captura não sair escurecida.
 async function capturar(pagina, arquivo) {
+  if (!process.argv.includes("--evidencias")) return;
+  fs.mkdirSync(EVIDENCIAS, { recursive: true });
   await pagina.waitForTimeout(350);
   await pagina.screenshot({ path: path.join(EVIDENCIAS, arquivo), animations: "disabled" });
 }
@@ -116,7 +94,7 @@ const abrirCartaoTreino = async (pagina, nome) => {
   await pagina.locator("#titulo-treino", { hasText: nome }).waitFor();
 };
 
-/* --- Servidor --- */
+/* --- Arquivos estáticos --- */
 
 test("arquivos estáticos são servidos com o tipo MIME correto", async () => {
   const esperados = {
@@ -135,72 +113,6 @@ test("arquivos estáticos são servidos com o tipo MIME correto", async () => {
     assert.ok(resposta.headers.get("content-type").startsWith(tipo), caminho);
   }
   assert.equal((await fetch(`${URL_BASE}/server/db.json`)).status, 404, "db.json não é público");
-});
-
-test("a API recusa dados inválidos e JSON malformado com 400", async () => {
-  const casos = [
-    ["/workouts", { nome: "  ", dias: [0] }, "O nome do treino não pode estar vazio."],
-    ["/workouts", { nome: "X", dias: [] }, "Selecione pelo menos um dia da semana."],
-    ["/workouts", { nome: "X", dias: [9] }, "Os dias da semana devem ser números de 0 a 6."],
-    ["/workouts", "{malformado", "O corpo da requisição não é um JSON válido."],
-    ["/workouts", "[1, 2]", "O corpo da requisição deve ser um objeto JSON."],
-    ["/workouts/1/exercises", { nome: "" }, "O nome do exercício não pode estar vazio."],
-    ["/workouts/1/exercises/2/sets", { peso: 0, repeticoes: 10 }, "O peso deve ser um número maior que zero."],
-    ["/workouts/1/exercises/2/sets", '{"peso": Infinity, "repeticoes": 10}', "O peso deve ser um número maior que zero."],
-    ["/workouts/1/exercises/2/sets", { peso: 10, repeticoes: 1.5 }, "As repetições devem ser um número inteiro maior que zero."],
-    ["/workouts/1/exercises/2/sets", { peso: 10, repeticoes: true }, "As repetições devem ser um número inteiro maior que zero."],
-  ];
-  const antes = await (await fetch(`${URL_BASE}/api/workouts`)).text();
-
-  for (const [caminho, corpo, mensagem] of casos) {
-    const resposta = await apiJson("POST", caminho, corpo);
-    assert.equal(resposta.status, 400, mensagem);
-    assert.ok(resposta.headers.get("content-type").startsWith("application/json"));
-    assert.deepEqual(await resposta.json(), { error: mensagem });
-  }
-
-  const depois = await (await fetch(`${URL_BASE}/api/workouts`)).text();
-  assert.equal(depois, antes, "requisição recusada não pode alterar os dados");
-});
-
-test("a API responde 404 em JSON para ids e rotas inexistentes", async () => {
-  const caminhos = ["/workouts/999", "/workouts/abc", "/workouts/1/exercises/999/sets", "/inexistente"];
-  for (const caminho of caminhos) {
-    const resposta = await fetch(`${URL_BASE}/api${caminho}`, {
-      method: caminho.endsWith("sets") ? "POST" : "GET",
-      body: caminho.endsWith("sets") ? JSON.stringify({ peso: 10, repeticoes: 10 }) : undefined,
-    });
-    assert.equal(resposta.status, 404, caminho);
-    assert.ok((await resposta.json()).error, caminho);
-  }
-});
-
-test("a API numera as séries e preserva acentos", async () => {
-  const treino = await obterTreinoCriado({ nome: "Pernas à tarde" });
-  assert.equal(treino.nome, "Pernas à tarde");
-
-  const comExercicio = await (await apiJson("POST", `/workouts/${treino.id}/exercises`, { nome: "Agachamento" })).json();
-  const caminho = `/workouts/${treino.id}/exercises/${comExercicio.exercicios[0].id}/sets`;
-
-  await apiJson("POST", caminho, { peso: 50, repeticoes: 10 });
-  await apiJson("POST", caminho, { peso: 60, repeticoes: 8 });
-  const resposta = await apiJson("POST", caminho, { peso: 70, repeticoes: 6 });
-  assert.equal(resposta.status, 201);
-  const { series } = (await resposta.json()).exercicios[0];
-  assert.deepEqual(series.map((s) => s.numero), [1, 2, 3]);
-
-  const semASegunda = await (await fetch(`${URL_BASE}/api${caminho}/${series[1].id}`, { method: "DELETE" })).json();
-  assert.deepEqual(semASegunda.exercicios[0].series.map((s) => [s.numero, s.peso]), [[1, 50], [2, 70]]);
-});
-
-test("gravações simultâneas não se perdem (trava do servidor)", async () => {
-  const treino = await obterTreinoCriado({ nome: "Concorrência" });
-  await Promise.all(Array.from({ length: 10 }, (_, i) =>
-    apiJson("POST", `/workouts/${treino.id}/exercises`, { nome: `Exercício ${i}` })));
-
-  const salvo = await (await fetch(`${URL_BASE}/api/workouts/${treino.id}`)).json();
-  assert.equal(salvo.exercicios.length, 10);
-  assert.equal(new Set(salvo.exercicios.map((e) => e.id)).size, 10, "ids devem ser únicos");
 });
 
 /* --- Consulta --- */

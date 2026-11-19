@@ -6,7 +6,7 @@ O **GymLog** é uma aplicação Web voltada para praticantes de musculação que
 
 Este repositório faz parte da disciplina **Tecnologia de Construção de Software I — Projeto Integrador** e é desenvolvido de forma **incremental** ao longo do semestre, sempre sobre o mesmo repositório Git. Cada etapa da disciplina corresponde a uma versão identificável do projeto, marcada por uma tag Git.
 
-O front-end é construído com **HTML, CSS e JavaScript puro**, sem frameworks nem bibliotecas. Desde a Etapa 05, os dados ficam em um **servidor simulado em Python**, feito só com a biblioteca padrão, com o qual o navegador se comunica por HTTP e JSON.
+O front-end é construído com **HTML, CSS e JavaScript puro**, sem frameworks nem bibliotecas. Os dados ficam em um **servidor em Python**, feito só com a biblioteca padrão, que expõe uma **API REST** em JSON. A interface usa essa API, que também pode ser testada no Postman, no Insomnia ou com curl.
 
 ---
 
@@ -111,7 +111,7 @@ JavaScript puro, sem depender de recarregar a página:
 
 ### Comunicação com o servidor
 
-Todos os dados são lidos e gravados de forma assíncrona no servidor simulado:
+Todos os dados são lidos e gravados de forma assíncrona no servidor:
 
 - indicador de carregamento nas consultas e botão "Salvando..." nos envios, que
   também impede o envio duplicado;
@@ -121,6 +121,13 @@ Todos os dados são lidos e gravados de forma assíncrona no servidor simulado:
 - tratamento de erro do servidor, falha de conexão e tempo limite de 8 segundos.
 
 > Detalhes em `docs/etapa-05.md`.
+
+### API REST
+
+O servidor expõe os treinos como recurso principal, com CRUD completo
+(`GET`, `POST`, `PUT`, `DELETE`), e exercícios, séries e cardio como sub-recursos.
+A referência dos endpoints, com exemplos reais de requisição e resposta, está em
+[`docs/api/README.md`](docs/api/README.md), junto da coleção do Postman.
 
 ### Evolução
 
@@ -142,7 +149,7 @@ Versão atual do projeto:
 | Fetch API, Promises e `async`/`await` | comunicação assíncrona com o servidor |
 | `<template>` HTML | marcação dos elementos repetidos, clonada pelo JS (sem HTML em strings) |
 | SVG inline | ícones (`<symbol>` + `<use>`), sem imagens externas nem biblioteca |
-| Python 3.10+ (biblioteca padrão) | apenas o servidor simulado (`server/server.py`) |
+| Python 3.10+ (biblioteca padrão) | servidor e API REST (`server/`) |
 | Node.js e Playwright | apenas os testes automatizados; a aplicação não depende deles |
 | Git / GitHub | versionamento e hospedagem do repositório |
 
@@ -153,9 +160,9 @@ O front-end não tem framework, biblioteca externa nem etapa de build.
 Os itens abaixo **não estão implementados** e são listados apenas como possibilidades de evolução, a serem avaliadas conforme os conteúdos da disciplina avançarem:
 
 - framework web no servidor;
+- autenticação, paginação e versionamento da API;
 - banco de dados relacional (por exemplo, PostgreSQL);
 - React ou outra biblioteca de interface;
-- autenticação de usuários.
 
 A adoção de qualquer uma dessas tecnologias será justificada em `docs/decisoes-tecnicas.md` no momento em que ocorrer.
 
@@ -168,13 +175,18 @@ A adoção de qualquer uma dessas tecnologias será justificada em `docs/decisoe
 ├── README.md
 ├── package.json              # só para os testes (Playwright)
 ├── docs/
+│   ├── api/
+│   │   ├── README.md         # referência dos endpoints
+│   │   ├── gymlog.postman_collection.json
+│   │   └── exemplos/         # corpos JSON usados nos exemplos de curl
 │   ├── decisoes-tecnicas.md
-│   ├── etapa-03.md
-│   ├── etapa-04.md
-│   ├── etapa-05.md
+│   ├── etapa-03.md … etapa-06.md
 │   └── evidencias/
 ├── server/
-│   ├── server.py             # servidor simulado (arquivos estáticos + API)
+│   ├── server.py             # HTTP: arquivos estáticos, corpo, persistência e respostas
+│   ├── rotas.py              # tabela de rotas da API e uma função por operação
+│   ├── validacao.py          # regras de validação
+│   ├── erros.py              # erro padrão da API
 │   └── db.json               # dados persistidos
 ├── src/
 │   ├── index.html
@@ -188,7 +200,9 @@ A adoção de qualquer uma dessas tecnologias será justificada em `docs/decisoe
 │       ├── calculations.js   # cálculos (funções puras)
 │       └── ui.js             # renderização e estados da interface
 └── tests/
-    └── manual-check.js       # testes de ponta a ponta e evidências
+    ├── api-check.js          # testes da API e da coleção do Postman
+    ├── manual-check.js       # testes da interface e evidências da Etapa 05
+    └── servidor-de-teste.js  # sobe o servidor com dados temporários
 ```
 
 As responsabilidades e dependências de cada módulo estão na seção 4 de `docs/etapa-05.md`.
@@ -212,7 +226,7 @@ cd Projeto-Tecnologia-Construcao-Software
 python server/server.py   # no Windows, também: py server/server.py
 ```
 
-**3. Acessar** `http://localhost:3000`
+**3. Acessar** `http://localhost:3000` (interface) ou `http://localhost:3000/api/workouts` (API)
 
 Abrir o `index.html` diretamente não funciona mais: módulos ES e `fetch` exigem um servidor HTTP.
 
@@ -222,14 +236,17 @@ Abrir o `index.html` diretamente não funciona mais: módulos ES e `fetch` exige
 | `DB_PATH` | `server/db.json` | arquivo de dados |
 | `MOCK_DELAY_MS` | `600` | atraso artificial nas rotas `/api`, para os estados de carregamento ficarem visíveis |
 
-**4. Rodar os testes** (exige Node.js)
+**4. Testar a API** no Postman ou no Insomnia, importando `docs/api/gymlog.postman_collection.json`, ou com os comandos curl de [`docs/api/README.md`](docs/api/README.md).
+
+**5. Rodar os testes automatizados** (exige Node.js)
 
 ```bash
 npm install
-npm test
+npm test               # API e interface
+npm run evidencias     # regrava as capturas da Etapa 05
 ```
 
-**5. Consultar uma etapa específica**
+**6. Consultar uma etapa específica**
 
 ```bash
 git checkout etapa-01
@@ -253,7 +270,7 @@ Esta seção é atualizada conforme cada funcionalidade é implementada, para re
 
 ## Persistência dos dados
 
-Os dados ficam em `server/db.json`, lido e gravado pelo servidor simulado a cada operação. O navegador guarda apenas uma cópia em memória para desenhar as telas, e o projeto não usa armazenamento local do navegador.
+Os dados ficam em `server/db.json`, lido e gravado pelo servidor a cada operação. O navegador guarda apenas uma cópia em memória para desenhar as telas, e o projeto não usa armazenamento local do navegador.
 
 - os dados permanecem entre recarregamentos e reinícios do servidor;
 - o arquivo é versionado com os treinos de exemplo, então usar a aplicação faz com que ele apareça como modificado no Git;
@@ -274,8 +291,8 @@ Planejamento inicial:
 | Etapa 03 | validação e organização do código |
 | Etapa 04 | interatividade com JavaScript |
 | Etapa 05 | modularização e comunicação assíncrona |
-| Etapa 06 | evolução e métricas |
-| Etapa 07+ | possível backend/API |
+| Etapa 06 | API REST da aplicação |
+| Etapa 07+ | evolução e métricas |
 | Etapa 10 | aplicação consolidada |
 | Final | versão final |
 
@@ -330,24 +347,27 @@ A documentação complementar fica na pasta `docs/`:
 | `docs/etapa-03.md` | interface responsiva |
 | `docs/etapa-04.md` | interatividade com JavaScript |
 | `docs/etapa-05.md` | modularização e comunicação assíncrona |
+| `docs/etapa-06.md` | API REST da aplicação |
+| `docs/api/README.md` | referência dos endpoints da API |
 | `docs/evidencias/` | capturas de tela de cada etapa |
 
 ---
 
 ## Limitações conhecidas
 
-- **servidor apenas local e de desenvolvimento** — atende só em `127.0.0.1`;
+- **servidor apenas local e de desenvolvimento** — atende só em `127.0.0.1`, sem HTTPS;
 - **armazenamento simples** — `db.json` é regravado por inteiro a cada escrita;
 - **ausência de autenticação** — não há usuários, contas ou controle de acesso;
 - **sem sincronização entre abas ou dispositivos** — uma aba só vê as mudanças de outra na consulta seguinte;
 - **sem backup automático** dos dados.
 
-Essas limitações fazem parte do escopo atual, e não são falhas de implementação. A lista completa está na seção 11 de `docs/etapa-05.md`.
+Essas limitações fazem parte do escopo atual, e não são falhas de implementação. As listas completas estão em `docs/etapa-05.md` (seção 11) e `docs/etapa-06.md` (seção 9).
 
 ---
 
 ## Próximos passos
 
+- usar na interface a edição e a exclusão de treino, que a API já oferece;
 - construir a visualização do histórico;
 - avaliar a apresentação da evolução por exercício;
 - manter `docs/decisoes-tecnicas.md` e este README atualizados a cada etapa.
