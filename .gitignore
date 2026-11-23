@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 *.tmp
 test-results/
+server/*.db
+server/*.db-journal

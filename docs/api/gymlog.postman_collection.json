@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "GymLog API",
-    "description": "API REST do GymLog (Etapa 06). Inicie o servidor com `python server/server.py` e execute as pastas em ordem: as requisições de criação guardam os ids usados nas seguintes. Documentação: docs/api.md.",
+    "description": "API REST do GymLog (Etapa 06). Inicie o servidor com `python server/server.py` e execute as pastas em ordem: as requisições de criação guardam os ids usados nas seguintes. Documentação: docs/api/README.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

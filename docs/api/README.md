@@ -11,6 +11,7 @@ Referência dos endpoints. Para executar o servidor e o contexto da etapa, veja
 | **Sub-recursos** | exercícios, séries e cardio de um treino |
 | **Coleção do Postman** | [`gymlog.postman_collection.json`](gymlog.postman_collection.json) |
 | **Corpos de exemplo** | [`exemplos/`](exemplos/) |
+| **Persistência** | banco SQLite (`server/gymlog.db`); modelo em [`docs/etapa-07.md`](../etapa-07.md) |
 
 ## Sumário
 
@@ -45,10 +46,12 @@ Referência dos endpoints. Para executar o servidor e o contexto da etapa, veja
 | `400 Bad Request` | Dado inválido, JSON malformado ou corpo que não está em UTF-8 |
 | `404 Not Found` | Treino, exercício, série ou sessão inexistente, ou rota desconhecida |
 | `405 Method Not Allowed` | A rota existe, mas não aceita o método; o cabeçalho `Allow` lista os aceitos |
+| `409 Conflict` | Uma restrição do banco recusou os dados; é uma defesa extra, porque a validação da API costuma barrar antes |
 | `413 Content Too Large` | Corpo acima de 100.000 bytes |
 | `415 Unsupported Media Type` | Corpo enviado sem `Content-Type: application/json` |
-| `500 Internal Server Error` | Erro inesperado no servidor, como um `db.json` corrompido |
+| `500 Internal Server Error` | Banco inacessível ou corrompido ("Não foi possível acessar o banco de dados."), ou outro erro inesperado |
 | `501 Not Implemented` | Método que o servidor não implementa em nenhuma rota, como `OPTIONS` |
+| `503 Service Unavailable` | O banco ficou ocupado por outra gravação além do tempo de espera; o cabeçalho `Retry-After` sugere tentar de novo em 1 s |
 
 ## Formato dos erros
 
@@ -122,8 +125,8 @@ mensagem pode ser exibida diretamente ao usuário.
 | PATCH | `/workouts/{id}/cardio/sessions/{idSessao}` | Marca ou desmarca a sessão como feita | 200 |
 | DELETE | `/workouts/{id}/cardio/sessions/{idSessao}` | Remove uma sessão | 200 |
 
-Os exemplos abaixo são respostas reais do servidor, partindo dos dados de exemplo de
-`server/db.json`. Os comandos devem ser executados na raiz do projeto, porque leem os
+Os exemplos abaixo são respostas reais do servidor, partindo de um banco recém-criado
+com os dados de exemplo (`python server/banco.py --recriar`). Os comandos devem ser executados na raiz do projeto, porque leem os
 corpos de `docs/api/exemplos/`. Os cabeçalhos `Server`, `Date` e `Content-Length` foram omitidos.
 
 ## Treinos
@@ -162,9 +165,9 @@ curl -i -X POST http://localhost:3000/api/workouts \
 ```http
 HTTP/1.0 201 Created
 Content-Type: application/json; charset=utf-8
-Location: /api/workouts/29
+Location: /api/workouts/4
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros + Abdômen", "dias": [2, 5], "exercicios": [], "cardio": null}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros + Abdômen", "dias": [2, 5], "exercicios": [], "cardio": null}
 ```
 
 ### Consultar treino
@@ -172,14 +175,14 @@ Location: /api/workouts/29
 `GET /workouts/{id}`
 
 ```bash
-curl -i http://localhost:3000/api/workouts/29
+curl -i http://localhost:3000/api/workouts/4
 ```
 
 ```http
 HTTP/1.0 200 OK
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros + Abdômen", "dias": [2, 5], "exercicios": [], "cardio": null}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros + Abdômen", "dias": [2, 5], "exercicios": [], "cardio": null}
 ```
 
 ### Alterar treino
@@ -192,7 +195,7 @@ Content-Type: application/json; charset=utf-8
 ```
 
 ```bash
-curl -i -X PUT http://localhost:3000/api/workouts/29 \
+curl -i -X PUT http://localhost:3000/api/workouts/4 \
   -H "Content-Type: application/json" \
   --data-binary @docs/api/exemplos/alterar-treino.json
 ```
@@ -201,7 +204,7 @@ curl -i -X PUT http://localhost:3000/api/workouts/29 \
 HTTP/1.0 200 OK
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": null}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": null}
 ```
 
 ### Excluir treino
@@ -209,7 +212,7 @@ Content-Type: application/json; charset=utf-8
 `DELETE /workouts/{id}`. Exclui o treino com todos os exercícios, séries e cardio.
 
 ```bash
-curl -i -X DELETE http://localhost:3000/api/workouts/29
+curl -i -X DELETE http://localhost:3000/api/workouts/4
 ```
 
 ```http
@@ -227,7 +230,7 @@ HTTP/1.0 204 No Content
 ```
 
 ```bash
-curl -i -X POST http://localhost:3000/api/workouts/29/exercises \
+curl -i -X POST http://localhost:3000/api/workouts/4/exercises \
   -H "Content-Type: application/json" \
   --data-binary @docs/api/exemplos/exercicio.json
 ```
@@ -236,7 +239,7 @@ curl -i -X POST http://localhost:3000/api/workouts/29/exercises \
 HTTP/1.0 201 Created
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [{"id": 30, "nome": "Desenvolvimento com Halteres", "series": []}], "cardio": null}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [{"id": 11, "nome": "Desenvolvimento com Halteres", "series": []}], "cardio": null}
 ```
 
 ### Registrar série
@@ -248,7 +251,7 @@ Content-Type: application/json; charset=utf-8
 ```
 
 ```bash
-curl -i -X POST http://localhost:3000/api/workouts/29/exercises/30/sets \
+curl -i -X POST http://localhost:3000/api/workouts/4/exercises/11/sets \
   -H "Content-Type: application/json" \
   --data-binary @docs/api/exemplos/serie.json
 ```
@@ -257,7 +260,7 @@ curl -i -X POST http://localhost:3000/api/workouts/29/exercises/30/sets \
 HTTP/1.0 201 Created
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [{"id": 30, "nome": "Desenvolvimento com Halteres", "series": [{"id": 31, "numero": 1, "peso": 14, "repeticoes": 12, "feita": false}]}], "cardio": null}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [{"id": 11, "nome": "Desenvolvimento com Halteres", "series": [{"id": 13, "numero": 1, "peso": 14, "repeticoes": 12, "feita": false}]}], "cardio": null}
 ```
 
 ### Marcar série como feita
@@ -269,7 +272,7 @@ Content-Type: application/json; charset=utf-8
 ```
 
 ```bash
-curl -i -X PATCH http://localhost:3000/api/workouts/29/exercises/30/sets/31 \
+curl -i -X PATCH http://localhost:3000/api/workouts/4/exercises/11/sets/13 \
   -H "Content-Type: application/json" \
   --data-binary @docs/api/exemplos/feita.json
 ```
@@ -278,7 +281,7 @@ curl -i -X PATCH http://localhost:3000/api/workouts/29/exercises/30/sets/31 \
 HTTP/1.0 200 OK
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [{"id": 30, "nome": "Desenvolvimento com Halteres", "series": [{"id": 31, "numero": 1, "peso": 14, "repeticoes": 12, "feita": true}]}], "cardio": null}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [{"id": 11, "nome": "Desenvolvimento com Halteres", "series": [{"id": 13, "numero": 1, "peso": 14, "repeticoes": 12, "feita": true}]}], "cardio": null}
 ```
 
 ### Remover série e exercício
@@ -288,15 +291,15 @@ renumera as restantes. `DELETE /workouts/{id}/exercises/{idExercicio}` remove o
 exercício com suas séries. Ambos respondem `200` com o treino atualizado.
 
 ```bash
-curl -i -X DELETE http://localhost:3000/api/workouts/29/exercises/30/sets/31
-curl -i -X DELETE http://localhost:3000/api/workouts/29/exercises/30
+curl -i -X DELETE http://localhost:3000/api/workouts/4/exercises/11/sets/13
+curl -i -X DELETE http://localhost:3000/api/workouts/4/exercises/11
 ```
 
 ```http
 HTTP/1.0 200 OK
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": null}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": null}
 ```
 
 ## Cardio
@@ -310,7 +313,7 @@ Content-Type: application/json; charset=utf-8
 ```
 
 ```bash
-curl -i -X PUT http://localhost:3000/api/workouts/29/cardio \
+curl -i -X PUT http://localhost:3000/api/workouts/4/cardio \
   -H "Content-Type: application/json" \
   --data-binary @docs/api/exemplos/cardio.json
 ```
@@ -319,7 +322,7 @@ curl -i -X PUT http://localhost:3000/api/workouts/29/cardio \
 HTTP/1.0 200 OK
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": {"modalidade": "Bicicleta", "metaMinutos": 30, "metaKm": null, "sessoes": []}}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": {"modalidade": "Bicicleta", "metaMinutos": 30, "metaKm": null, "sessoes": []}}
 ```
 
 ### Registrar sessão
@@ -332,7 +335,7 @@ Content-Type: application/json; charset=utf-8
 ```
 
 ```bash
-curl -i -X POST http://localhost:3000/api/workouts/29/cardio/sessions \
+curl -i -X POST http://localhost:3000/api/workouts/4/cardio/sessions \
   -H "Content-Type: application/json" \
   --data-binary @docs/api/exemplos/sessao.json
 ```
@@ -341,7 +344,7 @@ curl -i -X POST http://localhost:3000/api/workouts/29/cardio/sessions \
 HTTP/1.0 201 Created
 Content-Type: application/json; charset=utf-8
 
-{"id": 29, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": {"modalidade": "Bicicleta", "metaMinutos": 30, "metaKm": null, "sessoes": [{"id": 32, "minutos": 15, "km": null, "feita": false}]}}
+{"id": 4, "nome": "Treino D", "descricao": "Ombros", "dias": [2], "exercicios": [], "cardio": {"modalidade": "Bicicleta", "metaMinutos": 30, "metaKm": null, "sessoes": [{"id": 4, "minutos": 15, "km": null, "feita": false}]}}
 ```
 
 ### Marcar e remover sessão
@@ -351,10 +354,10 @@ Content-Type: application/json; charset=utf-8
 atualizado, como nas séries.
 
 ```bash
-curl -i -X PATCH http://localhost:3000/api/workouts/29/cardio/sessions/32 \
+curl -i -X PATCH http://localhost:3000/api/workouts/4/cardio/sessions/4 \
   -H "Content-Type: application/json" \
   --data-binary @docs/api/exemplos/feita.json
-curl -i -X DELETE http://localhost:3000/api/workouts/29/cardio/sessions/32
+curl -i -X DELETE http://localhost:3000/api/workouts/4/cardio/sessions/4
 ```
 
 ## Exemplos de erro

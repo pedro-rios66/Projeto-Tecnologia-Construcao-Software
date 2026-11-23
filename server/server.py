@@ -1,21 +1,24 @@
 """Servidor do GymLog: serve src/ e a API REST em /api (só biblioteca padrão).
 
-Organização:
-  server.py    HTTP: leitura da requisição, persistência e respostas JSON
-  rotas.py     tabela de rotas e as funções que atendem cada uma
-  validacao.py regras de validação dos corpos recebidos
-  erros.py     erro padrão da API
+Camadas, de fora para dentro:
+  server.py       HTTP: leitura da requisição, erros e respostas JSON
+  rotas.py        API: tabela de rotas; valida e chama o repositório (sem SQL)
+  validacao.py    regras de validação dos corpos recebidos
+  repositorio.py  todo o SQL: grava e consulta treinos (sem HTTP)
+  banco.py        SQLite: criação do banco, conexões, transações e erros de persistência
+  erros.py        erro padrão da API
 """
 
 import json
 import mimetypes
 import os
-import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
+import banco
+from banco import BancoOcupado, ErroPersistencia, NaoEncontrado, ViolacaoDeRegra
 from erros import ErroApi
 from rotas import encontrar_rota
 
@@ -29,15 +32,11 @@ mimetypes.add_type("image/svg+xml", ".svg")
 
 PASTA_SERVIDOR = Path(__file__).resolve().parent
 PASTA_SRC = PASTA_SERVIDOR.parent / "src"
-DB_PATH = Path(os.environ.get("DB_PATH", PASTA_SERVIDOR / "db.json"))
 PORTA = int(os.environ.get("PORT", 3000))
 ATRASO_SEGUNDOS = int(os.environ.get("MOCK_DELAY_MS", 600)) / 1000
 TAMANHO_MAXIMO_CORPO = 100_000  # bytes; nenhuma operação legítima chega perto disso
 METODOS_COM_CORPO = ("POST", "PUT", "PATCH")
 
-# As requisições rodam em threads paralelas. Sem a trava, duas gravações simultâneas
-# poderiam ler o mesmo arquivo e a última sobrescreveria o trabalho da primeira.
-trava_db = threading.Lock()
 
 
 class ManipuladorGymLog(SimpleHTTPRequestHandler):
@@ -95,13 +94,23 @@ class ManipuladorGymLog(SimpleHTTPRequestHandler):
             funcao, parametros = encontrar_rota(self.command, self.caminho())
             corpo = self.converter_json(conteudo) if self.command in METODOS_COM_CORPO else None
 
-            with trava_db:
-                db = json.loads(DB_PATH.read_text("utf-8"))
-                status, resposta, *cabecalhos = funcao(db, parametros, corpo)
-                if self.command != "GET":
-                    DB_PATH.write_text(json.dumps(db, ensure_ascii=False, indent=2), "utf-8")
+            status, resposta, *cabecalhos = funcao(parametros, corpo)
         except ErroApi as erro:
             self.responder_json(erro.status, {"error": erro.mensagem}, erro.cabecalhos)
+        except NaoEncontrado as erro:
+            self.responder_json(404, {"error": str(erro)})
+        # Erros de persistência: o detalhe técnico vai para o log do servidor, nunca para o cliente.
+        except BancoOcupado as erro:
+            self.log_error("Banco ocupado: %s", erro)
+            self.responder_json(
+                503, {"error": "O banco de dados está ocupado. Tente novamente em instantes."}, {"Retry-After": "1"}
+            )
+        except ViolacaoDeRegra as erro:
+            self.log_error("Regra do banco violada: %s", erro)
+            self.responder_json(409, {"error": "Os dados foram recusados por uma regra do banco de dados."})
+        except ErroPersistencia as erro:
+            self.log_error("Erro de persistência: %s", erro)
+            self.responder_json(500, {"error": "Não foi possível acessar o banco de dados."})
         except Exception as erro:
             self.log_error("Erro inesperado: %r", erro)
             self.responder_json(500, {"error": "Erro interno do servidor."})
@@ -123,11 +132,14 @@ class ManipuladorGymLog(SimpleHTTPRequestHandler):
 
 
 def main():
+    if banco.criar_banco():
+        print(f"Banco criado em {banco.caminho}, com os dados de exemplo.", flush=True)
     # A fila padrão de conexões tem só 5 posições; no Windows, o excedente é recusado.
     ThreadingHTTPServer.request_queue_size = 64
     # Só na interface local: este servidor de desenvolvimento não tem autenticação.
     with ThreadingHTTPServer(("127.0.0.1", PORTA), ManipuladorGymLog) as servidor:
         print(f"GymLog em http://localhost:{PORTA} | API em http://localhost:{PORTA}/api/workouts", flush=True)
+        print(f"Banco de dados: {banco.caminho}", flush=True)
         print("Ctrl+C para encerrar", flush=True)
         try:
             servidor.serve_forever()

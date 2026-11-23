@@ -1,7 +1,10 @@
-// Testes da API REST (Etapa 06), feitos direto por HTTP, sem navegador.
+// Testes da API REST (Etapas 06 e 07), feitos direto por HTTP, sem navegador.
 // Execução: npm test
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const { after, before, test } = require("node:test");
 const { iniciarServidor } = require("./servidor-de-teste");
 
@@ -61,6 +64,7 @@ test("GET /workouts/{id} devolve um treino ou 404", async () => {
 
   await esperarErro(await requisitar("GET", "/workouts/99999"), 404, "Treino não encontrado.");
   await esperarErro(await requisitar("GET", "/workouts/abc"), 404, "Treino não encontrado.");
+  await esperarErro(await requisitar("DELETE", "/workouts/1/exercises/1/sets/xyz"), 404, "Série não encontrada.");
 });
 
 test("POST /workouts cria o treino com 201 e Location", async () => {
@@ -242,6 +246,61 @@ test("cardio: meta, sessões e erro sem cardio definido", async () => {
 
   const semSessao = await (await requisitar("DELETE", `${base}/sessions/${sessao.id}`)).json();
   assert.deepEqual(semSessao.cardio.sessoes, []);
+});
+
+/* --- Persistência (Etapa 07) --- */
+
+test("os dados persistem depois de reiniciar o servidor", async () => {
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "gymlog-reinicio-"));
+  const db = path.join(pasta, "gymlog.db");
+  try {
+    const primeiro = await iniciarServidor(3996, { db });
+    const resposta = await fetch(`${primeiro.url}/api/workouts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: "Sobrevive ao reinício", dias: [3] }),
+    });
+    const { id } = await resposta.json();
+    await primeiro.encerrar();
+
+    const segundo = await iniciarServidor(3996, { db });
+    try {
+      const salvo = await (await fetch(`${segundo.url}/api/workouts/${id}`)).json();
+      assert.equal(salvo.nome, "Sobrevive ao reinício");
+      assert.deepEqual(salvo.dias, [3]);
+    } finally {
+      await segundo.encerrar();
+    }
+  } finally {
+    fs.rmSync(pasta, { recursive: true, force: true });
+  }
+});
+
+test("banco inacessível responde 500 sem expor detalhes do banco", async () => {
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "gymlog-corrompido-"));
+  const db = path.join(pasta, "gymlog.db");
+  fs.writeFileSync(db, "isto não é um banco SQLite");
+  const comDefeito = await iniciarServidor(3995, { db });
+  try {
+    const resposta = await fetch(`${comDefeito.url}/api/workouts`);
+    await esperarErro(resposta, 500, "Não foi possível acessar o banco de dados.");
+  } finally {
+    await comDefeito.encerrar();
+    fs.rmSync(pasta, { recursive: true, force: true });
+  }
+});
+
+test("excluir um treino apaga em cascata o que pertence a ele", async () => {
+  const treino = await criarTreino();
+  const base = `/workouts/${treino.id}`;
+  const { exercicios } = await (await requisitar("POST", `${base}/exercises`, { nome: "Supino" })).json();
+  await requisitar("POST", `${base}/exercises/${exercicios[0].id}/sets`, { peso: 40, repeticoes: 10 });
+  await requisitar("PUT", `${base}/cardio`, { modalidade: "Remo", metaMinutos: 10 });
+  await requisitar("POST", `${base}/cardio/sessions`, { minutos: 5 });
+
+  assert.equal((await requisitar("DELETE", base)).status, 204);
+  await esperarErro(await requisitar("POST", `${base}/exercises/${exercicios[0].id}/sets`, { peso: 40, repeticoes: 10 }), 404);
+  await esperarErro(await requisitar("POST", `${base}/cardio/sessions`, { minutos: 5 }), 404);
 });
 
 /* --- Coleção do Postman --- */

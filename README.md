@@ -6,7 +6,7 @@ O **GymLog** é uma aplicação Web voltada para praticantes de musculação que
 
 Este repositório faz parte da disciplina **Tecnologia de Construção de Software I — Projeto Integrador** e é desenvolvido de forma **incremental** ao longo do semestre, sempre sobre o mesmo repositório Git. Cada etapa da disciplina corresponde a uma versão identificável do projeto, marcada por uma tag Git.
 
-O front-end é construído com **HTML, CSS e JavaScript puro**, sem frameworks nem bibliotecas. Os dados ficam em um **servidor em Python**, feito só com a biblioteca padrão, que expõe uma **API REST** em JSON. A interface usa essa API, que também pode ser testada no Postman, no Insomnia ou com curl.
+O front-end é construído com **HTML, CSS e JavaScript puro**, sem frameworks nem bibliotecas. Os dados ficam em um **banco de dados SQLite**, acessado por um **servidor em Python** feito só com a biblioteca padrão, que expõe uma **API REST** em JSON. A interface usa essa API, que também pode ser testada no Postman, no Insomnia ou com curl.
 
 ---
 
@@ -150,6 +150,7 @@ Versão atual do projeto:
 | `<template>` HTML | marcação dos elementos repetidos, clonada pelo JS (sem HTML em strings) |
 | SVG inline | ícones (`<symbol>` + `<use>`), sem imagens externas nem biblioteca |
 | Python 3.10+ (biblioteca padrão) | servidor e API REST (`server/`) |
+| SQLite (módulo `sqlite3` do Python) | banco de dados relacional (`server/gymlog.db`) |
 | Node.js e Playwright | apenas os testes automatizados; a aplicação não depende deles |
 | Git / GitHub | versionamento e hospedagem do repositório |
 
@@ -161,7 +162,7 @@ Os itens abaixo **não estão implementados** e são listados apenas como possib
 
 - framework web no servidor;
 - autenticação, paginação e versionamento da API;
-- banco de dados relacional (por exemplo, PostgreSQL);
+- banco de dados com servidor (por exemplo, PostgreSQL), se houver vários usuários;
 - React ou outra biblioteca de interface;
 
 A adoção de qualquer uma dessas tecnologias será justificada em `docs/decisoes-tecnicas.md` no momento em que ocorrer.
@@ -183,11 +184,15 @@ A adoção de qualquer uma dessas tecnologias será justificada em `docs/decisoe
 │   ├── etapa-03.md … etapa-06.md
 │   └── evidencias/
 ├── server/
-│   ├── server.py             # HTTP: arquivos estáticos, corpo, persistência e respostas
-│   ├── rotas.py              # tabela de rotas da API e uma função por operação
+│   ├── server.py             # HTTP: arquivos estáticos, corpo, erros e respostas
+│   ├── rotas.py              # tabela de rotas da API (sem SQL)
 │   ├── validacao.py          # regras de validação
+│   ├── repositorio.py        # todo o SQL: CRUD dos treinos (sem HTTP)
+│   ├── banco.py              # SQLite: criação, conexões, transações e erros
+│   ├── schema.sql            # tabelas, relacionamentos e restrições
+│   ├── dados_exemplo.sql     # treinos de exemplo
 │   ├── erros.py              # erro padrão da API
-│   └── db.json               # dados persistidos
+│   └── gymlog.db             # banco de dados (criado ao iniciar; não versionado)
 ├── src/
 │   ├── index.html
 │   ├── css/
@@ -201,6 +206,8 @@ A adoção de qualquer uma dessas tecnologias será justificada em `docs/decisoe
 │       └── ui.js             # renderização e estados da interface
 └── tests/
     ├── api-check.js          # testes da API e da coleção do Postman
+    ├── banco-check.js        # roda os testes do repositório no npm test
+    ├── test_repositorio.py   # testes do repositório e do banco (unittest)
     ├── manual-check.js       # testes da interface e evidências da Etapa 05
     └── servidor-de-teste.js  # sobe o servidor com dados temporários
 ```
@@ -226,6 +233,8 @@ cd Projeto-Tecnologia-Construcao-Software
 python server/server.py   # no Windows, também: py server/server.py
 ```
 
+O banco `server/gymlog.db` é criado automaticamente na primeira execução, com os dados de exemplo. Para recriá-lo do zero: `python server/banco.py --recriar` (apaga os dados).
+
 **3. Acessar** `http://localhost:3000` (interface) ou `http://localhost:3000/api/workouts` (API)
 
 Abrir o `index.html` diretamente não funciona mais: módulos ES e `fetch` exigem um servidor HTTP.
@@ -233,7 +242,7 @@ Abrir o `index.html` diretamente não funciona mais: módulos ES e `fetch` exige
 | Variável de ambiente | Padrão | Função |
 |---|---|---|
 | `PORT` | `3000` | porta do servidor |
-| `DB_PATH` | `server/db.json` | arquivo de dados |
+| `DB_PATH` | `server/gymlog.db` | arquivo do banco de dados |
 | `MOCK_DELAY_MS` | `600` | atraso artificial nas rotas `/api`, para os estados de carregamento ficarem visíveis |
 
 **4. Testar a API** no Postman ou no Insomnia, importando `docs/api/gymlog.postman_collection.json`, ou com os comandos curl de [`docs/api/README.md`](docs/api/README.md).
@@ -242,7 +251,7 @@ Abrir o `index.html` diretamente não funciona mais: módulos ES e `fetch` exige
 
 ```bash
 npm install
-npm test               # API e interface
+npm test               # banco, API e interface
 npm run evidencias     # regrava as capturas da Etapa 05
 ```
 
@@ -270,11 +279,12 @@ Esta seção é atualizada conforme cada funcionalidade é implementada, para re
 
 ## Persistência dos dados
 
-Os dados ficam em `server/db.json`, lido e gravado pelo servidor a cada operação. O navegador guarda apenas uma cópia em memória para desenhar as telas, e o projeto não usa armazenamento local do navegador.
+Os dados ficam em um banco **SQLite**, no arquivo `server/gymlog.db`, com seis tabelas relacionadas: treinos, dias do treino, exercícios, séries, cardios e sessões de cardio. Cada operação é uma transação, e o banco garante as relações e as regras básicas, como a exclusão em cascata e o peso maior que zero.
 
-- os dados permanecem entre recarregamentos e reinícios do servidor;
-- o arquivo é versionado com os treinos de exemplo, então usar a aplicação faz com que ele apareça como modificado no Git;
-- para restaurar os dados de exemplo: `git restore server/db.json`.
+- os dados permanecem entre reinicializações do servidor;
+- o banco é criado automaticamente na primeira execução, a partir de `server/schema.sql` e `server/dados_exemplo.sql`;
+- o arquivo do banco não é versionado; para voltar aos dados de exemplo, use `python server/banco.py --recriar`, que apaga os dados atuais;
+- modelo, entidades, relacionamentos e exemplos de CRUD estão em `docs/etapa-07.md`.
 
 ---
 
@@ -292,7 +302,8 @@ Planejamento inicial:
 | Etapa 04 | interatividade com JavaScript |
 | Etapa 05 | modularização e comunicação assíncrona |
 | Etapa 06 | API REST da aplicação |
-| Etapa 07+ | evolução e métricas |
+| Etapa 07 | persistência com banco de dados |
+| Etapa 08+ | evolução e métricas |
 | Etapa 10 | aplicação consolidada |
 | Final | versão final |
 
@@ -348,6 +359,7 @@ A documentação complementar fica na pasta `docs/`:
 | `docs/etapa-04.md` | interatividade com JavaScript |
 | `docs/etapa-05.md` | modularização e comunicação assíncrona |
 | `docs/etapa-06.md` | API REST da aplicação |
+| `docs/etapa-07.md` | banco de dados: modelo, entidades, relacionamentos e CRUD |
 | `docs/api/README.md` | referência dos endpoints da API |
 | `docs/evidencias/` | capturas de tela de cada etapa |
 
@@ -356,12 +368,12 @@ A documentação complementar fica na pasta `docs/`:
 ## Limitações conhecidas
 
 - **servidor apenas local e de desenvolvimento** — atende só em `127.0.0.1`, sem HTTPS;
-- **armazenamento simples** — `db.json` é regravado por inteiro a cada escrita;
+- **um gravador por vez** — o SQLite serializa as gravações, o que basta para um usuário;
 - **ausência de autenticação** — não há usuários, contas ou controle de acesso;
 - **sem sincronização entre abas ou dispositivos** — uma aba só vê as mudanças de outra na consulta seguinte;
 - **sem backup automático** dos dados.
 
-Essas limitações fazem parte do escopo atual, e não são falhas de implementação. As listas completas estão em `docs/etapa-05.md` (seção 11) e `docs/etapa-06.md` (seção 9).
+Essas limitações fazem parte do escopo atual, e não são falhas de implementação. As listas completas estão em `docs/etapa-05.md` (seção 11), `docs/etapa-06.md` (seção 9) e `docs/etapa-07.md` (seção 14).
 
 ---
 

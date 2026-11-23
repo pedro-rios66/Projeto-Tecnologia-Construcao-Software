@@ -3,7 +3,7 @@
   "private": true,
   "description": "Ferramentas de teste do GymLog. A aplicação em si não tem dependências.",
   "scripts": {
-    "test": "node --test tests/api-check.js tests/manual-check.js",
+    "test": "node --test tests/banco-check.js tests/api-check.js tests/manual-check.js",
     "evidencias": "node tests/manual-check.js --evidencias"
   },
   "devDependencies": {

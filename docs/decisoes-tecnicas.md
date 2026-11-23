@@ -581,3 +581,55 @@ cobre só o que os scripts usam. Uma coleção quebrada reprova o `npm test`.
 Rodar os testes regravava as capturas da Etapa 05 e mudava evidências já entregues,
 por exemplo o destaque do dia atual. A captura passou a depender de
 `npm run evidencias`.
+
+---
+
+# Decisões técnicas — Etapa 07 (persistência e CRUD com banco de dados)
+
+Detalhamento completo em `docs/etapa-07.md`.
+
+## SQLite em vez do arquivo JSON
+
+O `db.json` não tinha transações, restrições nem consultas, e era regravado inteiro a
+cada mudança. O SQLite resolve isso sem dependência externa, porque vem no Python, e sem
+servidor, porque é um arquivo. Foi escolhido um banco relacional porque o domínio tem
+relações fixas que o banco pode garantir: exclusão em cascata, "no máximo um cardio por
+treino" e "peso maior que zero". PostgreSQL, MongoDB e TinyDB foram avaliados (seção 2
+de `docs/etapa-07.md`).
+
+## Repositório separado da API
+
+As rotas passaram a chamar `repositorio.py`, que concentra todo o SQL, em vez de
+alterar o JSON diretamente. `banco.py` converte os erros do `sqlite3` em exceções
+próprias (`NaoEncontrado`, `ViolacaoDeRegra`, `BancoOcupado` e `ErroPersistencia`).
+Assim, nenhuma camada acima do repositório sabe que o banco é SQLite. O contrato da API
+não mudou, e a interface não precisou de nenhuma alteração.
+
+## Transação por operação, sem o Lock
+
+Cada função do repositório é uma transação: a operação inteira é gravada, ou nada é.
+O `threading.Lock` da Etapa 05 foi removido, porque agora é o banco que serializa as
+gravações. O teste de 10 gravações simultâneas continua passando.
+
+## Validação antes da busca
+
+Na Etapa 06, a API buscava o registro e só depois validava o corpo. Agora o corpo é
+validado antes de chamar o repositório, então dados inválidos respondem `400` sem
+nenhum acesso ao banco.
+
+## Número da série calculado na consulta
+
+O campo `numero` deixou de ser guardado e renumerado a cada remoção. Ele é calculado com
+`ROW_NUMBER()`, o que evita guardar um dado derivado. A API continua devolvendo `numero`.
+
+## Ids por tabela
+
+No JSON, um contador único gerava ids para todas as entidades. Agora cada tabela tem a
+própria sequência. Os dados de exemplo foram renumerados (treinos 1 a 3, exercícios 1 a
+10...), e os exemplos de `docs/api/README.md` foram capturados de novo.
+
+## Correção de mensagens
+
+As mensagens de 404 de série e sessão diziam "Série não encontrado." e "Sessão não
+encontrado.", porque eram montadas com um rótulo genérico. Agora cada mensagem é escrita
+por inteiro, com a concordância correta.
